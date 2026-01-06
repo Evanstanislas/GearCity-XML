@@ -31,6 +31,9 @@ def CreateButtons(self, main_frame):
     self.saveAs_btn = ttk.Button(btn_frame_left, text="Save As", command=self.save_to_xml, state="disabled")
     self.saveAs_btn.pack(side="left", padx=SPACING["sm"])
 
+    self.exportExcel_btn = ttk.Button(btn_frame_left, text="Export to Excel", command=self.export_excel, state="disabled")
+    self.exportExcel_btn.pack(side="left", padx=SPACING["sm"])
+
     # -------------------------
     # RIGHT SIDE BUTTONS
     # -------------------------
@@ -50,6 +53,7 @@ def ActivateButton(self):
     self.save_btn.config(state="normal")
     self.saveAs_btn.config(state="normal")
     self.save_ai_btn.config(state="normal")
+    self.exportExcel_btn.config(state="normal")
     self.add_button.config(state="normal")
     self.delete_ai_btn.config(state="normal")
 

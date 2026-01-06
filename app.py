@@ -11,7 +11,7 @@ from ui import CreateTable, CreateCompanyDetails, CreateButtons, ActivateButton
 from logic.CRUD import (build_new_company, get_company_details, write_company_changes, 
                    delete_company_and_reindex, pick_new_selection, prepare_field_value)
 from logic.xml_utils import (load_xml_file, save_xml_to_file, build_new_xml_with_company, 
-                       build_city_map_from_xml, load_city_xml)
+                       build_city_map_from_xml, load_city_xml, ExportExcel)
 from logic.ui_utils import refresh_editor_ui
 
 class XMLEditor:
@@ -289,6 +289,19 @@ class XMLEditor:
         ActivateButton(self)
 
         messagebox.showinfo("New XML", "A new AI XML has been created with 1 starter company.")
+
+    # Export Excel
+    def export_excel(self):
+        file_path = filedialog.asksaveasfilename(
+                    defaultextension=".xlsx",
+                    filetypes=[("Excel Files", "*.xlsx")]
+                )
+        if not file_path:
+            return
+        ExportExcel(self.xml_root, file_path)
+
+        messagebox.showinfo("Exported", f"XML has been exported as {file_path}")
+        
 
     # ================================
     # ▶️ Run

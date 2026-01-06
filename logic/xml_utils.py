@@ -1,4 +1,6 @@
 import xml.etree.ElementTree as ET
+import pandas as pd
+from openpyxl import load_workbook
 
 from logic.CRUD import build_new_company
 # ================================
@@ -116,3 +118,35 @@ def build_city_map_from_xml(self):
 def load_city_xml(file_path):
     tree = ET.parse(file_path)
     return tree.getroot()
+
+def ExportExcel(xml_root, file_path):
+    if not xml_root:
+        return
+
+    rows = []
+    for company in xml_root.findall("Company"):
+        row = {}
+        for key, value in company.attrib.items():
+            row[key] = value
+        for child in company:
+            for key, value in child.attrib.items():
+                row[f"{child.tag}_{key}"] = value
+        rows.append(row)
+
+    df = pd.DataFrame(rows)
+    df = df.apply(pd.to_numeric)
+
+    with pd.ExcelWriter(file_path, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name="Companies")
+
+        ws = writer.book.active
+
+        for column_cells in ws.columns:
+            max_length = 0
+            column_letter = column_cells[0].column_letter
+
+            for cell in column_cells:
+                if cell.value is not None:
+                    max_length = max(max_length, len(str(cell.value)))
+
+            ws.column_dimensions[column_letter].width = max_length + 2
