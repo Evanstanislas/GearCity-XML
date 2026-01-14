@@ -1,5 +1,6 @@
 import tkinter.font as tkFont
 from tkinter import ttk
+from awthemes import AwthemesStyle
 
 from settings.theme import (
     base_font, bold_font, header_font,
@@ -14,11 +15,7 @@ def setup_styles(root):
     font_obj = tkFont.Font(font=base_font)
 
     # Setup ttk style
-    style = ttk.Style(root)
-
-    # Add awthemes path and require it
-    root.tk.call('lappend', 'auto_path', './awthemes-10.4.0')
-    root.tk.call('package', 'require', 'awdark')
+    style = AwthemesStyle(root)
 
     # Now apply the theme
     style.theme_use("awdark")
