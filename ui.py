@@ -16,11 +16,11 @@ def CreateButtons(self, main_frame):
     btn_frame_left = ttk.Frame(main_frame)
     btn_frame_left.grid(row=0, column=0, sticky="w", padx=SPACING["sm"], pady=SPACING["sm"])
 
-    self.upload_btn = ttk.Button(btn_frame_left, text="Upload AI XML", command=self.upload_xml_file)
-    self.upload_btn.pack(side="left", padx=SPACING["sm"])
-
     self.new_btn = ttk.Button(btn_frame_left, text="New AI XML", command=self.new_ai_xml)
     self.new_btn.pack(side="left", padx=SPACING["sm"])
+
+    self.upload_btn = ttk.Button(btn_frame_left, text="Upload AI XML", command=self.upload_xml_file)
+    self.upload_btn.pack(side="left", padx=SPACING["sm"])
 
     self.upload_city_btn = ttk.Button(btn_frame_left, text="Upload City XML", command=self.upload_city_xml)
     self.upload_city_btn.pack(side="left", padx=SPACING["sm"])
@@ -49,6 +49,9 @@ def CreateButtons(self, main_frame):
     self.delete_ai_btn = ttk.Button(btn_frame_right, text="Delete AI", command=self.delete_ai_company, state="disabled", style="Danger.TButton")
     self.delete_ai_btn.pack(side="left", padx=SPACING["sm"])
 
+    self.generic_ai_btn = ttk.Button(btn_frame_right, text="Generic AI", command=self.generic_ai_company, state="disabled")
+    self.generic_ai_btn.pack(side="left", padx=SPACING["sm"])
+
 def ActivateButton(self):
     self.save_btn.config(state="normal")
     self.saveAs_btn.config(state="normal")
@@ -56,6 +59,7 @@ def ActivateButton(self):
     self.exportExcel_btn.config(state="normal")
     self.add_button.config(state="normal")
     self.delete_ai_btn.config(state="normal")
+    self.generic_ai_btn.config(state="normal")
 
 # Creating table
 def CreateTable(self, main_frame):
@@ -162,6 +166,10 @@ def make_multi_entry(editor, frame, fields):
         lbl.pack(side="left")
 
         field_cfg = FIELD_TYPES.get(key, {"type": "text"})
+        
+        if field_cfg.get("loans"):
+            entry_width = InitialWidth
+
         entry, var = create_widget(editor, subframe, key, var, field_cfg, entry_width)
 
         entry.pack(side="left")

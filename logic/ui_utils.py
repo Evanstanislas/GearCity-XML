@@ -4,11 +4,9 @@ import tkinter.ttk as ttk
 
 # import from different files
 from settings.theme import ROW_COLORS, SPACING
-from settings.config import max_widths, FIELD_TYPES, InitialWidth, TwoRowWidth, ThreeRowWidth, CREDIT_MAP, GENERIC_MAP
+from settings.config import max_widths, FIELD_TYPES, InitialWidth, RowWidth, CREDIT_MAP, GENERIC_MAP
 
-# ================================
 # 🎛️ UI Utilities
-# ================================
 def auto_resize_columns(table, font_obj):
     for col in table['columns']:
         if col in max_widths:
@@ -182,14 +180,12 @@ def refresh_editor_ui(self):
 def compute_entry_widths(count):
     if count == 1:
         return InitialWidth, InitialWidth
-    elif count == 2:
-        return InitialWidth, TwoRowWidth
-    elif count == 3:
-        return InitialWidth, ThreeRowWidth
+    elif count == 2 or count == 3:
+        return InitialWidth, RowWidth
     else:
         # fallback for 4+ entries
         label_width = max(5, InitialWidth - (count * 2))
-        entry_width = max(5, ThreeRowWidth - (count - 3))
+        entry_width = max(5, RowWidth - (count - 3))
         return label_width, entry_width
 
 def create_widget(editor, subframe, key, var, field_cfg, entry_width):
@@ -199,12 +195,13 @@ def create_widget(editor, subframe, key, var, field_cfg, entry_width):
         return ttk.Entry(subframe, textvariable=var, width=entry_width, font=editor.font_obj), var
 
     elif field_type == "number":
-        entry = ttk.Entry(subframe, textvariable=var, width=entry_width, font=editor.font_obj, validate="key")
-        entry.configure(validatecommand=(editor.root.register(str.isdigit), "%P"))
+        vcmd = editor.root.register(validate_int)
+        entry = ttk.Entry(subframe, textvariable=var, width=entry_width, font=editor.font_obj, 
+                          validate="key", validatecommand=(vcmd, "%P"))
         return entry, var
 
     elif field_type == "Creditdropdown":
-        entry = ttk.Combobox(subframe, textvariable=var, values=list(CREDIT_MAP.keys()), width=entry_width)
+        entry = ttk.Combobox(subframe, textvariable=var, values=list(CREDIT_MAP.keys()), width=RowWidth)
         entry.current(0)
         return entry, var
     
@@ -336,3 +333,10 @@ def bind_spinbox_dropdown_sync(editor, var, dropdown_var, dropdown, dropdown_sou
 
     # trace_add expects a callback that accepts (name, index, op) — use *args
     var.trace_add("write", on_spinbox_change)
+
+def validate_int(value):
+    if value == "":
+        return True
+    if value == "-":
+        return True
+    return value.lstrip("-").isdigit()

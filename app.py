@@ -9,7 +9,8 @@ from settings.style import setup_styles
 from settings.theme import SPACING
 from ui import CreateTable, CreateCompanyDetails, CreateButtons, ActivateButton
 from logic.CRUD import (build_new_company, get_company_details, write_company_changes, 
-                   delete_company_and_reindex, pick_new_selection, prepare_field_value)
+                   delete_company_and_reindex, pick_new_selection, prepare_field_value, 
+                   apply_generic_ai, get_selected_company)
 from logic.xml_utils import (load_xml_file, save_xml_to_file, build_new_xml_with_company, 
                        build_city_map_from_xml, load_city_xml, ExportExcel)
 from logic.ui_utils import refresh_editor_ui
@@ -40,20 +41,9 @@ class XMLEditor:
         main_frame.columnconfigure(1, weight=3, minsize=400)
         main_frame.rowconfigure(1, weight=1)  # row=1 is the big content row
 
-        # -------------------------
-        # Buttons row
-        # -------------------------
         CreateButtons(self, main_frame)
-
-        # -------------------------
-        # Left: Company details
-        # -------------------------
-        CreateCompanyDetails(self, main_frame)  # will go row=1, col=0
-
-        # -------------------------
-        # Right: Table
-        # -------------------------
-        CreateTable(self, main_frame)           # will go row=1, col=1
+        CreateCompanyDetails(self, main_frame)
+        CreateTable(self, main_frame)
 
     # ================================
     # 🎛️ UI Event Handlers
@@ -81,15 +71,7 @@ class XMLEditor:
                     if dropdown_var is not None:
                         dropdown_var.set(dropdown_val)
 
-    # ================================
-    # 📝 Company CRUD
-    # ================================
-    def add_new_company(self):
-        new_company = build_new_company(self.xml_root)
-        self.xml_root.append(new_company)
-        refresh_editor_ui(self)
-        return new_company
-    
+    # Upload Files
     def upload_xml_file(self):
         """Open file dialog, load XML, refresh UI."""
         file_path = filedialog.askopenfilename(
@@ -126,34 +108,30 @@ class XMLEditor:
             messagebox.showerror("Unexpected Error", f"Something went wrong 😢\n\n{e}")
 
     def upload_city_xml(self):
-            # Open file dialog to select XML
-            file_path = filedialog.askopenfilename(
-                title="Select City XML",
-                filetypes=[("XML Files", "*.xml")]
-            )
-            if file_path:
-                try:
-                    self.city_xml_root = load_city_xml(file_path)
-                    build_city_map_from_xml(self)
-                    refresh_editor_ui(self)
-                    messagebox.showinfo("Success", f"City XML uploaded!\n")
-                except Exception as e:
-                    messagebox.showerror("Error", f"Failed to load City XML:\n{e}")
-    
-    # CRUD Companies
+        # Open file dialog to select XML
+        file_path = filedialog.askopenfilename(
+            title="Select City XML",
+            filetypes=[("XML Files", "*.xml")]
+        )
+        if file_path:
+            try:
+                self.city_xml_root = load_city_xml(file_path)
+                build_city_map_from_xml(self)
+                refresh_editor_ui(self)
+                messagebox.showinfo("Success", f"City XML uploaded!\n")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load City XML:\n{e}")
+
+    # 📝 Company CRUD
+    def add_new_company(self):
+        new_company = build_new_company(self.xml_root)
+        self.xml_root.append(new_company)
+        refresh_editor_ui(self)
+        return new_company
+
     def save_ai_company(self):
-        sel = self.table.selection()
-        if not sel:
-            messagebox.showwarning("No selection", "Please select a company row to save.")
-            return
-
-        iid = sel[0]
-        item = self.table.item(iid)
-        company_id = str(item['values'][0])
-
-        company = self.xml_root.find(f"Company[@ID='{company_id}']")
+        company, company_id, _ = get_selected_company(self)
         if company is None:
-            messagebox.showerror("Error", "Selected company not found in XML.")
             return
 
         # 👉 hand off the logic part
@@ -172,47 +150,15 @@ class XMLEditor:
         messagebox.showinfo("Saved", "AI company changes saved (in memory).")
 
     def delete_ai_company(self):
-        """Delete the selected company, reindex IDs and OwnerIDs, refresh UI."""
-        # 0) basic pre-check
-        if not hasattr(self, "xml_root") or self.xml_root is None:
-            messagebox.showwarning("No XML Loaded", "Please load an XML before deleting a company.")
+        company, company_id, index = get_selected_company(self)
+        if company is None:
             return
-
-        sel = self.table.selection()
-        if not sel:
-            messagebox.showwarning("No selection", "Please select a company row to delete.")
-            return
-
-        selected_iid = sel[0]
-        selected_index = self.table.index(selected_iid)  # index in the tree (for re-selection afterwards)
-        item = self.table.item(selected_iid)
-        company_id = str(item['values'][0])
-
-        # confirm destructive action
-        ok = messagebox.askyesno(
-            "Confirm Delete",
-            f"Are you sure you want to delete Company ID {company_id}?\n\n"
-            "This will remove the company and reindex ALL company IDs and OwnerIDs."
-        )
-        if not ok:
-            return
-
-        # perform deletion + reindex (logic.py helper)
-        try:
-            delete_company_and_reindex(self.xml_root, company_id)
-        except KeyError:
-            messagebox.showerror("Error", f"Company ID {company_id} not found in XML.")
-            return
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete company:\n{e}")
-            return
-
         # refresh UI
         refresh_editor_ui(self)
 
         # choose a sensible selection: same index (or the last one)
         children = self.table.get_children()
-        new_iid = pick_new_selection(children, selected_index)
+        new_iid = pick_new_selection(children, index)
         if new_iid:
             self.table.selection_set(new_iid)
             self.table.see(new_iid)
@@ -226,10 +172,25 @@ class XMLEditor:
 
         messagebox.showinfo("Deleted", f"Company {company_id} deleted and IDs reindexed.")
 
-    # ================================
-    # 📂 File Handling (Load/Save/New)
-    # ================================
+    def generic_ai_company(self):
+        company, company_id, _ = get_selected_company(self)
+        if company is None:
+            return
 
+        apply_generic_ai(company)
+        refresh_editor_ui(self)
+
+        for iid in self.table.get_children():
+            vals = self.table.item(iid)['values']
+            if str(vals[0]) == company_id:
+                self.table.selection_set(iid)
+                self.table.see(iid)
+                self.show_details(None)
+                break
+
+        messagebox.showinfo("Done", f"Company {company_id} has it's value set to generic.")
+
+    # 📂 File Handling (Load/Save/New)
     def save_to_xml(self):
         if not hasattr(self, "xml_root") or self.xml_root is None:
             messagebox.showwarning("No XML Loaded", "Please load or create an XML before saving.")
@@ -285,7 +246,6 @@ class XMLEditor:
 
         # Refresh UI
         refresh_editor_ui(self)
-
         ActivateButton(self)
 
         messagebox.showinfo("New XML", "A new AI XML has been created with 1 starter company.")

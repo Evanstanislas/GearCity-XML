@@ -1,14 +1,47 @@
 # import from packages
 import xml.etree.ElementTree as ET
+from tkinter import messagebox
 
 #import from different files
-from settings.config import CREDIT_MAP, CREDIT_MAP_REV, GENERIC_MAP, GENERIC_MAP_REV, FIELD_TYPES
+from settings.config import CREDIT_MAP, CREDIT_MAP_REV, GENERIC_MAP, GENERIC_MAP_REV, FIELD_TYPES, GENERIC_AI_TEMPLATE
 
 def pick_new_selection(children, old_index):
     if not children:
         return None
     new_index = min(old_index, len(children) - 1)
     return children[new_index]
+
+def get_selected_company(self, *, require_xml=True):
+    """
+    Returns (company, company_id, table_index) for the selected row.
+    Shows user-facing errors and returns (None, None, None) on failure.
+    """
+
+    if require_xml and (not hasattr(self, "xml_root") or self.xml_root is None):
+        messagebox.showwarning("No XML Loaded", "Please load an XML first.")
+        return None, None, None
+
+    sel = self.table.selection()
+    if not sel:
+        messagebox.showwarning("No selection", "Please select a company row.")
+        return None, None, None
+
+    iid = sel[0]
+    index = self.table.index(iid)
+    item = self.table.item(iid)
+
+    try:
+        company_id = str(item["values"][0])
+    except (IndexError, KeyError):
+        messagebox.showerror("Error", "Invalid table selection.")
+        return None, None, None
+
+    company = self.xml_root.find(f"Company[@ID='{company_id}']")
+    if company is None:
+        messagebox.showerror("Error", "Selected company not found in XML.")
+        return None, None, None
+
+    return company, company_id, index
 
 def prepare_field_value(key, val, field_types, dropdown_sources):
     """Return (main_value, dropdown_value) for a given field."""
@@ -78,27 +111,22 @@ def build_new_company(xml_root):
     })
 
     # Add child nodes
-    ET.SubElement(new_company, "Funds", {"OnHand": "-1", "Credit": "-1", "Loans": "0"})
-    ET.SubElement(new_company, "Skills", {
-        "Manufactoring": "-1", "RnD": "-1", "Admin": "-1", 
-        "Marketing": "-1", "Dealers": "-1"
-    })
-    ET.SubElement(new_company, "Design", {
-        "Engine": "-1", "Chassis": "-1", "Transmission": "-1", 
-        "Body": "-1", "Lux": "-1", "safety": "-1"
-    })
-    ET.SubElement(new_company, "Image", {
-        "GeneralGlobal": "-1", "Quality": "-1", "Racing": "-1", "Work": "-1"
-    })
-    ET.SubElement(new_company, "Behavior", {
-        "GenericDesigner": "-1", "Rating_Performance": "-1", "Rating_Drivability": "-1", "Rating_Luxury": "-1",
-        "Rating_Safety": "-1", "Rating_Fuel": "-1", "Rating_Power": "-1", "Rating_Cargo": "-1", "Rating_Dependability": "-1",
-        "DesignAggression": "-1", "SellAggression": "-1", "BuildAggression": "-1", "MarketingAggression": "-1",
-        "CostAggression": "-1", "QualityAggression": "-1", "PriceAggression": "-1", "ExpansionAggression": "-1",
-        "ClusterSpace": "-1", "ExportDesigns": "-1", "ImportDesigns": "-1"
-    })
+    apply_generic_ai(new_company)
 
     return new_company
+
+def apply_generic_ai(company):
+    """
+    Resets a company to generic AI values (GearCity-style randomness).
+    """
+    for tag, attributes in GENERIC_AI_TEMPLATE.items():
+        element = company.find(tag)
+
+        if element is None:
+            element = ET.SubElement(company, tag)
+
+        for key, value in attributes.items():
+            element.set(key, value)
 
 def write_company_changes(company, detail_vars, field_types):
     """Take the UI values and write them back into the given <Company> element."""

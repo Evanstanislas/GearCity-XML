@@ -1,26 +1,24 @@
 # Set up columns with custom widths
 column_widths = {
-    "ID": 50,
+    "ID": 40,
     "Name": 150,
     "Owner": 100,
     "HQ": 120,
-    "Founded": 70,
-    "Death": 70,
+    "Founded": 60,
+    "Death": 60,
     "Funds": 100
 }
 
 # For making certain columns staying the same in width
 max_widths = {
-    "ID": 50,        # lock ID at 50
-    "Founded": 70,   # cap Founded
-    "Death": 70      # cap Death
-    # others will resize normally
+    "ID": 40,
+    "Founded": 60,   # cap Founded
+    "Death": 60      # cap Death
 }
 
 # For the input fields
 InitialWidth=22
-TwoRowWidth=12
-ThreeRowWidth=5
+RowWidth=6
 
 FIELD_LAYOUT = {
     "Identity": [
@@ -106,7 +104,7 @@ FIELD_TYPES = {
 
     # --- Funds ---
     "Funds_OnHand": {"type": "number"},
-    "Funds_Loans": {"type": "number"},
+    "Funds_Loans": {"type": "number", "loans": True},
     "Funds_Credit": {"type": "Creditdropdown"},
 
     # --- Skills ---
@@ -178,3 +176,54 @@ GENERIC_MAP = {
 }
 
 GENERIC_MAP_REV = {v: k for k, v in GENERIC_MAP.items()}
+
+GENERIC_AI_TEMPLATE = {
+    "Funds": {
+        "OnHand": "-1",
+        "Credit": "-1",
+        "Loans": "0",
+    },
+    "Skills": {
+        "Manufactoring": "-1",
+        "RnD": "-1",
+        "Admin": "-1",
+        "Marketing": "-1",
+        "Dealers": "-1",
+    },
+    "Design": {
+        "Engine": "-1",
+        "Chassis": "-1",
+        "Transmission": "-1",
+        "Body": "-1",
+        "Lux": "-1",
+        "safety": "-1",
+    },
+    "Image": {
+        "GeneralGlobal": "-1",
+        "Quality": "-1",
+        "Racing": "-1",
+        "Work": "-1",
+    },
+    "Behavior": {
+        "GenericDesigner": "-1",
+        "Rating_Performance": "-1",
+        "Rating_Drivability": "-1",
+        "Rating_Luxury": "-1",
+        "Rating_Safety": "-1",
+        "Rating_Fuel": "-1",
+        "Rating_Power": "-1",
+        "Rating_Cargo": "-1",
+        "Rating_Dependability": "-1",
+        "DesignAggression": "-1",
+        "SellAggression": "-1",
+        "BuildAggression": "-1",
+        "MarketingAggression": "-1",
+        "CostAggression": "-1",
+        "QualityAggression": "-1",
+        "PriceAggression": "-1",
+        "ExpansionAggression": "-1",
+        "ClusterSpace": "-1",
+        "ExportDesigns": "-1",
+        "ImportDesigns": "-1",
+    },
+}
