@@ -1,9 +1,8 @@
 # import from packages
-import tkinter as tk
 import ttkbootstrap as ttk
 
 # import from different files
-from settings.theme import ROW_COLORS, SPACING
+from settings.style import ROW_COLORS, SPACING
 from settings.config import max_widths, FIELD_TYPES, InitialWidth, RowWidth, CREDIT_MAP, GENERIC_MAP
 
 # 🎛️ UI Utilities
@@ -125,7 +124,7 @@ def populate_company_table(self):
         # Insert row
         values = (cid, cname, owner_name, hq_name, founded, death, funds)
         tag = "evenrow" if idx % 2 == 0 else "oddrow"
-        self.table.insert("", tk.END, values=values, tags=(tag,))
+        self.table.insert("", ttk.END, values=values, tags=(tag,))
 
     # 📏 Adjust column widths automatically
     auto_resize_columns(self.table, self.font_obj)
@@ -212,7 +211,7 @@ def create_widget(editor, subframe, key, var, field_cfg, entry_width):
         return entry,var
 
     elif field_type == "checkbox":
-        bool_var = tk.BooleanVar(value=False)
+        bool_var = ttk.BooleanVar(value=False)
         entry = ttk.Checkbutton(subframe, variable=bool_var, width=entry_width)
         return entry, bool_var
 
@@ -243,7 +242,7 @@ def create_spinbox_with_optional_dropdown(editor, subframe, key, var, field_cfg,
     disable_mousewheel(entry)
 
     if field_cfg.get("with_dropdown"):
-        dropdown_var = tk.StringVar()
+        dropdown_var = ttk.StringVar()
         dropdown_source = field_cfg.get("dropdown_map", "city_map")
 
         # initial values (may be empty) — will be refreshed when combobox opens

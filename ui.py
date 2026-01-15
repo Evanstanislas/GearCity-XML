@@ -1,11 +1,10 @@
 # import from packages
-import tkinter as tk
 import ttkbootstrap as ttk
 from ttkbootstrap.scrolled import ScrolledFrame
 
 #import from different files
 from settings.config import column_widths, InitialWidth, FIELD_TYPES, FIELD_LAYOUT, GENERIC_MAP, CREDIT_MAP
-from settings.theme import SPACING
+from settings.style import SPACING
 from logic.preset_utils import PRESET_CONFIG
 from logic.ui_utils import compute_entry_widths, create_widget, sort_by_column, disable_mousewheel
 
@@ -15,13 +14,13 @@ def CreateButtons(self, main_frame):
     btn_frame_left = ttk.Frame(main_frame)
     btn_frame_left.grid(row=0, column=0, sticky="w", padx=SPACING["sm"], pady=SPACING["sm"])
 
-    self.new_btn = ttk.Button(btn_frame_left, text="New AI XML", command=self.new_ai_xml)
+    self.new_btn = ttk.Button(btn_frame_left, text="New AI XML", command=self.new_ai_xml, bootstyle="secondary")
     self.new_btn.pack(side="left", padx=SPACING["sm"])
 
-    self.upload_btn = ttk.Button(btn_frame_left, text="Upload AI XML", command=self.upload_xml_file)
+    self.upload_btn = ttk.Button(btn_frame_left, text="Upload AI XML", command=self.upload_xml_file, bootstyle="info")
     self.upload_btn.pack(side="left", padx=SPACING["sm"])
 
-    self.upload_city_btn = ttk.Button(btn_frame_left, text="Upload City XML", command=self.upload_city_xml)
+    self.upload_city_btn = ttk.Button(btn_frame_left, text="Upload City XML", command=self.upload_city_xml, bootstyle="info")
     self.upload_city_btn.pack(side="left", padx=SPACING["sm"])
 
     self.save_btn = ttk.Button(btn_frame_left, text="Save", command=self.save_quick, state="disabled")
@@ -30,7 +29,7 @@ def CreateButtons(self, main_frame):
     self.saveAs_btn = ttk.Button(btn_frame_left, text="Save As", command=self.save_to_xml, state="disabled")
     self.saveAs_btn.pack(side="left", padx=SPACING["sm"])
 
-    self.exportExcel_btn = ttk.Button(btn_frame_left, text="Export to Excel", command=self.export_excel, state="disabled")
+    self.exportExcel_btn = ttk.Button(btn_frame_left, text="Export to Excel", command=self.export_excel, state="disabled", bootstyle="light")
     self.exportExcel_btn.pack(side="left", padx=SPACING["sm"])
 
     # RIGHT SIDE BUTTONS
@@ -40,13 +39,13 @@ def CreateButtons(self, main_frame):
     self.add_button = ttk.Button(btn_frame_right, text="Add AI", command=self.add_new_company, state="disabled")
     self.add_button.pack(side="left", padx=SPACING["sm"])
 
-    self.save_ai_btn = ttk.Button(btn_frame_right, text="Save AI", command=self.save_ai_company, state="disabled", style="Accent.TButton")
+    self.save_ai_btn = ttk.Button(btn_frame_right, text="Save AI", command=self.save_ai_company, state="disabled", bootstyle="success")
     self.save_ai_btn.pack(side="left", padx=SPACING["sm"])
 
-    self.delete_ai_btn = ttk.Button(btn_frame_right, text="Delete AI", command=self.delete_ai_company, state="disabled", style="Danger.TButton")
+    self.delete_ai_btn = ttk.Button(btn_frame_right, text="Delete AI", command=self.delete_ai_company, state="disabled", bootstyle="danger")
     self.delete_ai_btn.pack(side="left", padx=SPACING["sm"])
 
-    self.generic_ai_btn = ttk.Button(btn_frame_right, text="Generic AI", command=self.generic_ai_company, state="disabled")
+    self.generic_ai_btn = ttk.Button(btn_frame_right, text="Generic AI", command=self.generic_ai_company, state="disabled", bootstyle="secondary")
     self.generic_ai_btn.pack(side="left", padx=SPACING["sm"])
 
 def ActivateButton(self):
@@ -67,7 +66,7 @@ def CreateTable(self, main_frame):
     self.table['columns'] = ("ID", "Name", "Owner", "HQ", "Founded", "Death", "Funds")
 
     self.table.heading("#0", text="", anchor="w")
-    self.table.column("#0", width=0, stretch=tk.NO)
+    self.table.column("#0", width=0, stretch=ttk.NO)
 
     for col in self.table['columns']:
         self.table.heading(
@@ -99,7 +98,6 @@ def CreateCompanyDetails(app, main_frame):
     content_frame = ScrolledFrame(
         detail_frame,
         autohide=True,
-        bootstyle="round"
     )
     content_frame.pack(fill="both", expand=True)
 
@@ -162,7 +160,7 @@ def make_multi_entry(editor, frame, fields):
         subframe = ttk.Frame(row)
         subframe.pack(side="left", padx=(SPACING["xs"], SPACING["md"]))
 
-        var = tk.StringVar(value="")
+        var = ttk.StringVar(value="")
         lbl = ttk.Label(subframe, text=f"{display_name}: ",
                         width=label_width, anchor="w", font=editor.font_obj)
         lbl.pack(side="left")
@@ -196,7 +194,7 @@ def make_preset_dropdown(editor, frame, key, display_name, presets_dict, apply_f
     subframe = ttk.Frame(row)
     subframe.pack(side="left", padx=(SPACING["xs"], SPACING["md"]))
 
-    var = tk.StringVar(value="")
+    var = ttk.StringVar(value="")
 
     lbl = ttk.Label(
         subframe,

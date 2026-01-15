@@ -1,11 +1,11 @@
 #Import packages
 import ttkbootstrap as ttk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog
 import xml.etree.ElementTree as ET
+from ttkbootstrap.dialogs import Messagebox
 
 # Import from files
-from settings.style import setup_styles
-from settings.theme import SPACING
+from settings.style import setup_styles, SPACING
 from ui import CreateTable, CreateCompanyDetails, CreateButtons, ActivateButton
 from logic.CRUD import (build_new_company, get_company_details, write_company_changes, 
                    delete_company_and_reindex, pick_new_selection, prepare_field_value, 
@@ -18,7 +18,7 @@ class XMLEditor:
     # 🏗️ Initialization
     def __init__(self):
         self.root = ttk.Tk()
-        self.style = ttk.Style("darkly")
+        self.style = ttk.Style("cyborg")
         self.root.title("Gearcity XML Editor")
         self.root.geometry("1400x800")
 
@@ -87,23 +87,23 @@ class XMLEditor:
             refresh_editor_ui(self)
             ActivateButton(self)
 
-            messagebox.showinfo("Success", f"XML loaded successfully! 🎉\n{file_path}")
+            Messagebox.showinfo("Success", f"XML loaded successfully! 🎉\n{file_path}")
 
         except ET.ParseError as e:
-            messagebox.showerror("XML Error", f"Invalid or malformed XML 😢\n\n{e}")
+            Messagebox.showerror("XML Error", f"Invalid or malformed XML 😢\n\n{e}")
         except ValueError as e:
-            messagebox.showerror("Structure Error", f"XML structure not valid for AI XML 😭\n\n{e}")
+            Messagebox.showerror("Structure Error", f"XML structure not valid for AI XML 😭\n\n{e}")
         except UnicodeDecodeError as e:
-            messagebox.showerror("Encoding Error", f"File encoding problem 😭\n\n{e}")
+            Messagebox.showerror("Encoding Error", f"File encoding problem 😭\n\n{e}")
         except FileNotFoundError:
-            messagebox.showerror("File Error", "File not found. Did it move?")
+            Messagebox.showerror("File Error", "File not found. Did it move?")
         except PermissionError:
-            messagebox.showerror("File Error", "Permission denied. Try running as admin.")
+            Messagebox.showerror("File Error", "Permission denied. Try running as admin.")
         except OSError as e:
-            messagebox.showerror("OS Error", f"Could not read file 😢\n\n{e}")
+            Messagebox.showerror("OS Error", f"Could not read file 😢\n\n{e}")
         except Exception as e:
             # final fallback
-            messagebox.showerror("Unexpected Error", f"Something went wrong 😢\n\n{e}")
+            Messagebox.showerror("Unexpected Error", f"Something went wrong 😢\n\n{e}")
 
     def upload_city_xml(self):
         # Open file dialog to select XML
@@ -116,9 +116,9 @@ class XMLEditor:
                 self.city_xml_root = load_city_xml(file_path)
                 build_city_map_from_xml(self)
                 refresh_editor_ui(self)
-                messagebox.showinfo("Success", f"City XML uploaded!\n")
+                Messagebox.showinfo("Success", f"City XML uploaded!\n")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to load City XML:\n{e}")
+                Messagebox.showerror("Error", f"Failed to load City XML:\n{e}")
 
     # 📝 Company CRUD
     def add_new_company(self):
@@ -145,7 +145,7 @@ class XMLEditor:
                 self.show_details(None)
                 break
 
-        messagebox.showinfo("Saved", "AI company changes saved (in memory).")
+        Messagebox.showinfo("Saved", "AI company changes saved (in memory).")
 
     def delete_ai_company(self):
         company, company_id, index = get_selected_company(self)
@@ -169,7 +169,7 @@ class XMLEditor:
                 except Exception:
                     pass
 
-        messagebox.showinfo("Deleted", f"Company {company_id} deleted and IDs reindexed.")
+        Messagebox.showinfo("Deleted", f"Company {company_id} deleted and IDs reindexed.")
 
     def generic_ai_company(self):
         company, company_id, _ = get_selected_company(self)
@@ -187,12 +187,12 @@ class XMLEditor:
                 self.show_details(None)
                 break
 
-        messagebox.showinfo("Done", f"Company {company_id} has it's value set to generic.")
+        Messagebox.showinfo("Done", f"Company {company_id} has it's value set to generic.")
 
     # 📂 File Handling (Load/Save/New)
     def save_to_xml(self):
         if not hasattr(self, "xml_root") or self.xml_root is None:
-            messagebox.showwarning("No XML Loaded", "Please load or create an XML before saving.")
+            Messagebox.showwarning("No XML Loaded", "Please load or create an XML before saving.")
             return
 
         initial_file = getattr(self, "last_file", "companies.xml")
@@ -210,14 +210,14 @@ class XMLEditor:
         try:
             save_xml_to_file(self.xml_root, file_path)   # 👉 hand off logic
             self.last_file = file_path
-            messagebox.showinfo("Success", f"XML saved successfully to:\n{file_path}")
+            Messagebox.showinfo("Success", f"XML saved successfully to:\n{file_path}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save XML:\n{e}")
+            Messagebox.showerror("Error", f"Failed to save XML:\n{e}")
 
     def save_quick(self):
         """Quick-save: overwrite last loaded/saved file directly."""
         if not hasattr(self, "xml_root") or self.xml_root is None:
-            messagebox.showwarning("No XML Loaded", "Please load or create an XML before saving.")
+            Messagebox.showwarning("No XML Loaded", "Please load or create an XML before saving.")
             return
 
         # Fall back to Save As if no known file
@@ -227,14 +227,14 @@ class XMLEditor:
 
         try:
             save_xml_to_file(self.xml_root, self.last_file)   # 👉 use the same helper
-            messagebox.showinfo("Success", f"XML saved successfully to:\n{self.last_file}")
+            Messagebox.showinfo("Success", f"XML saved successfully to:\n{self.last_file}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save XML:\n{e}")
+            Messagebox.showerror("Error", f"Failed to save XML:\n{e}")
 
     def new_ai_xml(self):
         # ⚠️ Confirm with the user before wiping
         if hasattr(self, "xml_root") and self.xml_root is not None:
-            if not messagebox.askyesno("Confirm", "This will erase the current XML. Continue?"):
+            if not Messagebox.askyesno("Confirm", "This will erase the current XML. Continue?"):
                 return
 
         # Build a brand-new XML
@@ -247,7 +247,7 @@ class XMLEditor:
         refresh_editor_ui(self)
         ActivateButton(self)
 
-        messagebox.showinfo("New XML", "A new AI XML has been created with 1 starter company.")
+        Messagebox.showinfo("New XML", "A new AI XML has been created with 1 starter company.")
 
     # Export Excel
     def export_excel(self):
@@ -259,7 +259,7 @@ class XMLEditor:
             return
         ExportExcel(self.xml_root, file_path)
 
-        messagebox.showinfo("Exported", f"XML has been exported as {file_path}")
+        Messagebox.showinfo("Exported", f"XML has been exported as {file_path}")
         
 
     # ================================
