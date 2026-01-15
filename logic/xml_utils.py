@@ -1,6 +1,5 @@
 import xml.etree.ElementTree as ET
 import pandas as pd
-from openpyxl import load_workbook
 
 from logic.CRUD import build_new_company
 # ================================

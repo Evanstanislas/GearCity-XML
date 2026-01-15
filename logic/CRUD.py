@@ -1,6 +1,6 @@
 # import from packages
 import xml.etree.ElementTree as ET
-from tkinter import messagebox
+from ttkbootstrap.dialogs import Messagebox
 
 #import from different files
 from settings.config import CREDIT_MAP, CREDIT_MAP_REV, GENERIC_MAP, GENERIC_MAP_REV, FIELD_TYPES, GENERIC_AI_TEMPLATE
@@ -18,12 +18,12 @@ def get_selected_company(self, *, require_xml=True):
     """
 
     if require_xml and (not hasattr(self, "xml_root") or self.xml_root is None):
-        messagebox.showwarning("No XML Loaded", "Please load an XML first.")
+        Messagebox.showwarning("No XML Loaded", "Please load an XML first.")
         return None, None, None
 
     sel = self.table.selection()
     if not sel:
-        messagebox.showwarning("No selection", "Please select a company row.")
+        Messagebox.showwarning("No selection", "Please select a company row.")
         return None, None, None
 
     iid = sel[0]
@@ -33,12 +33,12 @@ def get_selected_company(self, *, require_xml=True):
     try:
         company_id = str(item["values"][0])
     except (IndexError, KeyError):
-        messagebox.showerror("Error", "Invalid table selection.")
+        Messagebox.showerror("Error", "Invalid table selection.")
         return None, None, None
 
     company = self.xml_root.find(f"Company[@ID='{company_id}']")
     if company is None:
-        messagebox.showerror("Error", "Selected company not found in XML.")
+        Messagebox.showerror("Error", "Selected company not found in XML.")
         return None, None, None
 
     return company, company_id, index

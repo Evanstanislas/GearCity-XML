@@ -1,6 +1,5 @@
 #Import packages
-import tkinter as tk
-from tkinter import ttk
+import ttkbootstrap as ttk
 from tkinter import filedialog, messagebox
 import xml.etree.ElementTree as ET
 
@@ -16,16 +15,15 @@ from logic.xml_utils import (load_xml_file, save_xml_to_file, build_new_xml_with
 from logic.ui_utils import refresh_editor_ui
 
 class XMLEditor:
-    # ================================
     # 🏗️ Initialization
-    # ================================
     def __init__(self):
-        self.root = tk.Tk()
+        self.root = ttk.Tk()
+        self.style = ttk.Style("darkly")
         self.root.title("Gearcity XML Editor")
         self.root.geometry("1400x800")
 
         # Apply external styles 🎨
-        self.font_obj = setup_styles(self.root)
+        self.font_obj = setup_styles(self.style)
         self.company_map = {}
         self.city_map = {}
         self.preset_vars = {}
@@ -37,9 +35,9 @@ class XMLEditor:
         main_frame.pack(fill="both", expand=True)
 
         # 2 columns: left = details, right = table
-        main_frame.columnconfigure(0, weight=0, minsize=600)
+        main_frame.columnconfigure(0, weight=1, minsize=700)
         main_frame.columnconfigure(1, weight=3, minsize=400)
-        main_frame.rowconfigure(1, weight=1)  # row=1 is the big content row
+        main_frame.rowconfigure(1, weight=1)
 
         CreateButtons(self, main_frame)
         CreateCompanyDetails(self, main_frame)
@@ -153,6 +151,7 @@ class XMLEditor:
         company, company_id, index = get_selected_company(self)
         if company is None:
             return
+        delete_company_and_reindex(self.xml_root, index)
         # refresh UI
         refresh_editor_ui(self)
 

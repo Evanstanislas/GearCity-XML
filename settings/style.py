@@ -1,6 +1,4 @@
 import tkinter.font as tkFont
-from tkinter import ttk
-from awthemes import AwthemesStyle
 
 from settings.theme import (
     base_font, bold_font, header_font,
@@ -8,18 +6,11 @@ from settings.theme import (
     LABEL_FG, BUTTON_PADDING, ACCENT_BUTTON, SECONDARY_BUTTON, DANGER_BUTTON
 )
 
-def setup_styles(root):
+def setup_styles(style):
     """Apply global ttk styles to the app."""
 
     # Initialize fonts
     font_obj = tkFont.Font(font=base_font)
-
-    # Setup ttk style
-    style = AwthemesStyle(root)
-
-    # Now apply the theme
-    style.theme_use("awdark")
-
     # Table
     style.configure(
         "Treeview",
@@ -40,13 +31,7 @@ def setup_styles(root):
     style.configure("TButton", font=bold_font, padding=BUTTON_PADDING)
     style.configure("TLabelframe", font=header_font)
     style.configure("TLabelframe.Label", font=header_font)
-
-    style.configure(
-        "TSpinbox",
-        foreground=LABEL_FG,
-        font=base_font,
-        arrowsize=9            # smaller arrow buttons
-        )
+    style.configure("TSpinbox", foreground=LABEL_FG, font=base_font)
 
     # 🌟 Accent button (for main actions like Save)
     style.configure(

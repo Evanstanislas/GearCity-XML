@@ -1,6 +1,6 @@
 # import from packages
 import tkinter as tk
-import tkinter.ttk as ttk
+import ttkbootstrap as ttk
 
 # import from different files
 from settings.theme import ROW_COLORS, SPACING
@@ -203,10 +203,12 @@ def create_widget(editor, subframe, key, var, field_cfg, entry_width):
     elif field_type == "Creditdropdown":
         entry = ttk.Combobox(subframe, textvariable=var, values=list(CREDIT_MAP.keys()), width=RowWidth)
         entry.current(0)
+        disable_mousewheel(entry)
         return entry, var
     
     elif field_type == "Genericdropdown":
         entry = ttk.Combobox(subframe, textvariable=var, values=list(GENERIC_MAP.keys()), width=entry_width)
+        disable_mousewheel(entry)
         return entry,var
 
     elif field_type == "checkbox":
@@ -216,6 +218,11 @@ def create_widget(editor, subframe, key, var, field_cfg, entry_width):
 
     else:
         return create_spinbox_with_optional_dropdown(editor, subframe, key, var, field_cfg, entry_width)
+
+def disable_mousewheel(widget):
+    widget.bind("<MouseWheel>", lambda e: "break")     # Windows / macOS
+    widget.bind("<Button-4>", lambda e: "break")       # Linux scroll up
+    widget.bind("<Button-5>", lambda e: "break")       # Linux scroll down
 
 def create_spinbox_with_optional_dropdown(editor, subframe, key, var, field_cfg, entry_width):
     min_val = field_cfg.get("min", 0)
@@ -230,8 +237,10 @@ def create_spinbox_with_optional_dropdown(editor, subframe, key, var, field_cfg,
         increment=step,
         width=entry_width,
         font=editor.font_obj,
-        format=fmt
+        format=fmt,
     )
+
+    disable_mousewheel(entry)
 
     if field_cfg.get("with_dropdown"):
         dropdown_var = tk.StringVar()
@@ -245,6 +254,8 @@ def create_spinbox_with_optional_dropdown(editor, subframe, key, var, field_cfg,
             width=entry_width,
             font=editor.font_obj,
         )
+
+        disable_mousewheel(dropdown)
         dropdown.pack(side="left", padx=(SPACING["xs"], SPACING["sm"]))
 
         # use dynamic lookup inside bind function

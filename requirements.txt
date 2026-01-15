@@ -1,0 +1,5 @@
+traitlets
+tk
+pandas
+openpyxl
+ttkbootstrap

@@ -1,18 +1,17 @@
 # import from packages
 import tkinter as tk
-import tkinter.ttk as ttk
+import ttkbootstrap as ttk
+from ttkbootstrap.scrolled import ScrolledFrame
 
 #import from different files
 from settings.config import column_widths, InitialWidth, FIELD_TYPES, FIELD_LAYOUT, GENERIC_MAP, CREDIT_MAP
 from settings.theme import SPACING
 from logic.preset_utils import PRESET_CONFIG
-from logic.ui_utils import compute_entry_widths, create_widget, sort_by_column
+from logic.ui_utils import compute_entry_widths, create_widget, sort_by_column, disable_mousewheel
 
 # Create Buttons
 def CreateButtons(self, main_frame):
-    # -------------------------
     # LEFT SIDE BUTTONS
-    # -------------------------
     btn_frame_left = ttk.Frame(main_frame)
     btn_frame_left.grid(row=0, column=0, sticky="w", padx=SPACING["sm"], pady=SPACING["sm"])
 
@@ -34,9 +33,7 @@ def CreateButtons(self, main_frame):
     self.exportExcel_btn = ttk.Button(btn_frame_left, text="Export to Excel", command=self.export_excel, state="disabled")
     self.exportExcel_btn.pack(side="left", padx=SPACING["sm"])
 
-    # -------------------------
     # RIGHT SIDE BUTTONS
-    # -------------------------
     btn_frame_right = ttk.Frame(main_frame)
     btn_frame_right.grid(row=0, column=1, sticky="e", padx=SPACING["sm"], pady=SPACING["sm"])
 
@@ -66,14 +63,12 @@ def CreateTable(self, main_frame):
     table_frame = ttk.Frame(main_frame)
     table_frame.grid(row=1, column=1, sticky="nsew", padx=SPACING["md"], pady=SPACING["md"])
 
-    # 🌟 Create Treeview
     self.table = ttk.Treeview(table_frame)
     self.table['columns'] = ("ID", "Name", "Owner", "HQ", "Founded", "Death", "Funds")
 
     self.table.heading("#0", text="", anchor="w")
     self.table.column("#0", width=0, stretch=tk.NO)
 
-    # 🌟 Create sortable headers
     for col in self.table['columns']:
         self.table.heading(
             col,
@@ -82,36 +77,44 @@ def CreateTable(self, main_frame):
         )
         self.table.column(col, anchor="w", width=column_widths.get(col, 100))
 
-    # 🌟 Create vertical scrollbar
     vsb = ttk.Scrollbar(table_frame, orient="vertical", command=self.table.yview)
     self.table.configure(yscrollcommand=vsb.set)
 
-    # 🌟 Pack table + scrollbar side by side
     self.table.pack(side="left", fill="both", expand=True)
     vsb.pack(side="right", fill="y")
 
-    # 🌟 Bind selection
     self.table.bind("<<TreeviewSelect>>", self.show_details)
 
-
-def CreateCompanyDetails(app, parent):
+def CreateCompanyDetails(app, main_frame):
     """Build company detail frames and entries"""
-    detail_frame = ttk.Frame(parent)
-    detail_frame.grid(row=1, column=0, sticky="nsew", padx=SPACING["md"], pady=SPACING["md"])
+
+    # Outer container (fixed area)
+    detail_frame = ttk.Frame(main_frame)
+    detail_frame.grid(
+        row=1, column=0, sticky="nsew",
+        padx=SPACING["md"], pady=SPACING["md"]
+    )
     detail_frame.grid_propagate(False)
+
+    content_frame = ScrolledFrame(
+        detail_frame,
+        autohide=True,
+        bootstyle="round"
+    )
+    content_frame.pack(fill="both", expand=True)
 
     app.detail_labels = {}
     app.detail_vars = {}
     app.field_types = {}
 
     frames = {
-        "Identity": ttk.LabelFrame(detail_frame, text="Identity"),
-        "Funds": ttk.LabelFrame(detail_frame, text="Funds"),
-        "Skills": ttk.LabelFrame(detail_frame, text="Skills"),
-        "Design": ttk.LabelFrame(detail_frame, text="Design"),
-        "Image": ttk.LabelFrame(detail_frame, text="Image"),
-        "Behavior": ttk.LabelFrame(detail_frame, text="Behavior"),
-        "Aggressions": ttk.LabelFrame(detail_frame, text="Aggressions"),
+        "Identity": ttk.LabelFrame(content_frame, text="Identity"),
+        "Funds": ttk.LabelFrame(content_frame, text="Funds"),
+        "Skills": ttk.LabelFrame(content_frame, text="Skills"),
+        "Design": ttk.LabelFrame(content_frame, text="Design"),
+        "Image": ttk.LabelFrame(content_frame, text="Image"),
+        "Behavior": ttk.LabelFrame(content_frame, text="Behavior"),
+        "Aggressions": ttk.LabelFrame(content_frame, text="Aggressions"),
     }
 
     for f in frames.values():
@@ -138,7 +141,6 @@ def CreateCompanyDetails(app, parent):
                         cfg["dict"],
                         cfg["apply"],
                     )
-
     return detail_frame
 
 def make_single_entry(editor, frame, key, display_name):
@@ -218,6 +220,8 @@ def make_preset_dropdown(editor, frame, key, display_name, presets_dict, apply_f
         state="readonly",
         font=editor.font_obj
     )
+
+    disable_mousewheel(dropdown)
     dropdown.pack(side="left")
 
     # --- Event binding ---
