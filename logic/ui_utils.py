@@ -1,4 +1,5 @@
 # import from packages
+import tkinter as tk
 import ttkbootstrap as ttk
 
 # import from different files
@@ -124,7 +125,7 @@ def populate_company_table(self):
         # Insert row
         values = (cid, cname, owner_name, hq_name, founded, death, funds)
         tag = "evenrow" if idx % 2 == 0 else "oddrow"
-        self.table.insert("", ttk.END, values=values, tags=(tag,))
+        self.table.insert("", tk.END, values=values, tags=(tag,))
 
     # 📏 Adjust column widths automatically
     auto_resize_columns(self.table, self.font_obj)
@@ -145,8 +146,6 @@ def refresh_editor_ui(self):
         self.company_map = load_company_map(self)  # from Company XML
     else:
         self.company_map = {}
-
-    # 🏙️ City map is built after uploading city XML, so leave it as-is.
 
     # 🖼️ Repopulate the company table (only if company data exists)
     if hasattr(self, "xml_root") and self.xml_root is not None:

@@ -5,12 +5,6 @@ from ttkbootstrap.dialogs import Messagebox
 #import from different files
 from settings.config import CREDIT_MAP, CREDIT_MAP_REV, GENERIC_MAP, GENERIC_MAP_REV, FIELD_TYPES, GENERIC_AI_TEMPLATE
 
-def pick_new_selection(children, old_index):
-    if not children:
-        return None
-    new_index = min(old_index, len(children) - 1)
-    return children[new_index]
-
 def get_selected_company(self, *, require_xml=True):
     """
     Returns (company, company_id, table_index) for the selected row.
@@ -18,12 +12,12 @@ def get_selected_company(self, *, require_xml=True):
     """
 
     if require_xml and (not hasattr(self, "xml_root") or self.xml_root is None):
-        Messagebox.showwarning("No XML Loaded", "Please load an XML first.")
+        Messagebox.show_warning("Please load an XML first.", "No XML Loaded")
         return None, None, None
 
     sel = self.table.selection()
     if not sel:
-        Messagebox.showwarning("No selection", "Please select a company row.")
+        Messagebox.show_warning("Please select a company row.", "No selection")
         return None, None, None
 
     iid = sel[0]
@@ -33,15 +27,33 @@ def get_selected_company(self, *, require_xml=True):
     try:
         company_id = str(item["values"][0])
     except (IndexError, KeyError):
-        Messagebox.showerror("Error", "Invalid table selection.")
+        Messagebox.show_error("Invalid table selection.", "Error")
         return None, None, None
 
     company = self.xml_root.find(f"Company[@ID='{company_id}']")
     if company is None:
-        Messagebox.showerror("Error", "Selected company not found in XML.")
+        Messagebox.show_error("Selected company not found in XML.", "Error")
         return None, None, None
 
     return company, company_id, index
+
+def reselect_company(self, company_id):
+    for iid in self.table.get_children():
+        vals = self.table.item(iid)['values']
+        
+        if str(vals[0]) == company_id:
+            self.table.selection_set(iid)
+            self.table.see(iid)
+            self.show_details(None)
+            print("Reselected")
+            return True
+    return False
+
+def pick_new_selection(children, old_index):
+    if not children:
+        return None
+    new_index = min(old_index, len(children) - 1)
+    return children[new_index]
 
 def prepare_field_value(key, val, field_types, dropdown_sources):
     """Return (main_value, dropdown_value) for a given field."""
@@ -113,7 +125,7 @@ def build_new_company(xml_root):
     # Add child nodes
     apply_generic_ai(new_company)
 
-    return new_company
+    return new_company, new_id
 
 def apply_generic_ai(company):
     """

@@ -2,10 +2,8 @@ import xml.etree.ElementTree as ET
 import pandas as pd
 
 from logic.CRUD import build_new_company
-# ================================
-# 📂 XML Load & Save
-# ================================
 
+# 📂 XML Load & Save
 def load_xml_file(file_path):
     """Return parsed XML root or raise a friendly error."""
     try:
@@ -62,7 +60,7 @@ def build_new_xml_with_company():
     root = ET.Element("AINode")
 
     # 🚀 Reuse the helper, pass root so it knows the next ID
-    starter_company = build_new_company(root)
+    starter_company, _ = build_new_company(root)
     root.append(starter_company)
 
     return root
@@ -116,7 +114,17 @@ def build_city_map_from_xml(self):
 
 def load_city_xml(file_path):
     tree = ET.parse(file_path)
+    cities = tree.findall(".//City")
+    if not cities:
+        raise ValueError("XML does not contain any <Cities> elements.")
     return tree.getroot()
+
+def numericCheck(col):
+    try:
+        return pd.to_numeric(col)
+    except Exception:
+        print(f"Skipped non-numeric column: {col.name}")
+        return col
 
 def ExportExcel(xml_root, file_path):
     if not xml_root:
@@ -133,7 +141,7 @@ def ExportExcel(xml_root, file_path):
         rows.append(row)
 
     df = pd.DataFrame(rows)
-    df = df.apply(pd.to_numeric)
+    df = df.apply(numericCheck)
 
     with pd.ExcelWriter(file_path, engine="openpyxl") as writer:
         df.to_excel(writer, index=False, sheet_name="Companies")
