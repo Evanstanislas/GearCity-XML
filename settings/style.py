@@ -35,3 +35,12 @@ def setup_styles(style):
     style.configure("TLabelframe.Label", font=header_font)
     style.configure("TSpinbox", font=base_font)
     return font_obj
+
+def unbound(root):
+    root.bind_class("TCombobox", "<MouseWheel>", lambda e: "break")
+    root.bind_class("TCombobox", "<Button-4>", lambda e: "break")
+    root.bind_class("TCombobox", "<Button-5>", lambda e: "break")
+    root.bind_class("TSpinbox", "<MouseWheel>", lambda e: "break")
+    root.bind_class("TSpinbox", "<Button-4>", lambda e: "break")
+    root.bind_class("TSpinbox", "<Button-5>", lambda e: "break")
+    return

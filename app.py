@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 from ttkbootstrap.dialogs import Messagebox
 
 # Import from files
-from settings.style import setup_styles, SPACING
+from settings.style import setup_styles, SPACING, unbound
 from ui import CreateTable, CreateCompanyDetails, CreateButtons, ActivateButton
 from logic.CRUD import (build_new_company, get_company_details, write_company_changes, 
                    delete_company_and_reindex, pick_new_selection, prepare_field_value, 
@@ -24,6 +24,8 @@ class XMLEditor:
 
         # Apply external styles 🎨
         self.font_obj = setup_styles(self.style)
+        # Unbound the scroll wheel from SpinBox and ComboBox
+        unbound(self.root)
         self.company_map = {}
         self.city_map = {}
         self.preset_vars = {}

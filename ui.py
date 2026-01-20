@@ -7,7 +7,7 @@ from ttkbootstrap.scrolled import ScrolledFrame
 from settings.config import column_widths, InitialWidth, FIELD_TYPES, FIELD_LAYOUT, GENERIC_MAP, CREDIT_MAP
 from settings.style import SPACING
 from logic.preset_utils import PRESET_CONFIG
-from logic.ui_utils import compute_entry_widths, create_widget, sort_by_column, disable_mousewheel
+from logic.ui_utils import compute_entry_widths, create_widget, sort_by_column
 
 # Create Buttons
 def CreateButtons(self, main_frame):
@@ -219,8 +219,6 @@ def make_preset_dropdown(editor, frame, key, display_name, presets_dict, apply_f
         state="readonly",
         font=editor.font_obj
     )
-
-    disable_mousewheel(dropdown)
     dropdown.pack(side="left")
 
     # --- Event binding ---
