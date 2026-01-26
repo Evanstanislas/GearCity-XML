@@ -1,7 +1,6 @@
 #Import packages
 import ttkbootstrap as ttk
 from tkinter import filedialog
-import xml.etree.ElementTree as ET
 from ttkbootstrap.dialogs import Messagebox
 
 # Import from files
@@ -236,3 +235,7 @@ class XMLEditor:
 
     def run(self):
         self.root.mainloop()
+
+if __name__ == "__main__":
+    app = XMLEditor()
+    app.run()

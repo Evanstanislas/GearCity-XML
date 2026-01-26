@@ -1,5 +1,4 @@
 # import from packages
-import tkinter as tk
 import ttkbootstrap as ttk
 from ttkbootstrap.scrolled import ScrolledFrame
 
@@ -67,7 +66,7 @@ def CreateTable(self, main_frame):
     self.table['columns'] = ("ID", "Name", "Owner", "HQ", "Founded", "Death", "Funds")
 
     self.table.heading("#0", text="", anchor="w")
-    self.table.column("#0", width=0, stretch=tk.NO)
+    self.table.column("#0", width=0, stretch=False)
 
     for col in self.table['columns']:
         self.table.heading(
