@@ -1,15 +1,19 @@
-import tkinter.font as tkFont
-
 # Fonts
 base_font = ("Segoe UI", 8)
 bold_font = ("Segoe UI", 8, "bold")
 header_font = ("Segoe UI", 9, "bold")
 
 ROW_COLORS = {
-    "oddrow": "#363636",
-    "evenrow": "#232323"
+    "oddRowDark": "#363636",
+    "evenRowDark": "#232323",
+    "oddRowLight": "#E8E8E8",
+    "evenRowLight": "#D6D6D6"
 }
-TABLE_SELECTION_BG = "#51AECA"
+
+TABLE_SELECTION_BG = {
+    "Dark": "#51AECA",
+    "Light": "#004D79"
+}
 
 SPACING = {
     "xs": 2,
@@ -18,23 +22,26 @@ SPACING = {
     "md": 10,
 }
 
-def setup_styles(style):
-    """Apply global ttk styles to the app."""
-
-    # Initialize fonts
-    font_obj = tkFont.Font(font=base_font)
-    # Table
-    style.configure("Treeview", rowheight=25, font=base_font)
-    style.map("Treeview", background=[("selected", TABLE_SELECTION_BG)])
-    style.configure("Treeview.Heading", font=bold_font)
-
-    # General
-    style.configure("TLabel", font=base_font)
-    style.configure("TButton", font=bold_font)
-    style.configure("TLabelframe", font=header_font)
-    style.configure("TLabelframe.Label", font=header_font)
-    style.configure("TSpinbox", font=base_font)
-    return font_obj
+def setup_styles(self):
+    self.root.option_add("*Font", base_font)
+    self.style.configure("Treeview", rowheight=25)
+    self.style.configure("Treeview.Heading", font=bold_font)
+    self.style.configure("TButton", font=bold_font)
+    self.style.configure("TLabelframe.Label", font=header_font)
+    if self.mode.get() == 0: # DarkMode
+        self.style.map("Treeview", background=[('selected', TABLE_SELECTION_BG["Dark"])])
+    else: #LightMode
+        self.style.map("Treeview", background=[('selected', TABLE_SELECTION_BG["Light"])])
+    if hasattr(self, "table"):   # 🛡️ safety guard
+        styleTable(self)
+    
+def styleTable(self):
+    if self.mode.get() == 0:
+        self.table.tag_configure("evenrow", background=ROW_COLORS["evenRowDark"])
+        self.table.tag_configure("oddrow", background=ROW_COLORS["oddRowDark"])
+    else:
+        self.table.tag_configure("evenrow", background=ROW_COLORS["evenRowLight"])
+        self.table.tag_configure("oddrow", background=ROW_COLORS["oddRowLight"])
 
 def unbound(root):
     root.bind_class("TCombobox", "<MouseWheel>", lambda e: "break")

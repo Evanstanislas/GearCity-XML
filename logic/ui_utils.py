@@ -1,13 +1,24 @@
 # import from packages
 import tkinter as tk
 import ttkbootstrap as ttk
+import tkinter.font as tkFont
 
 # import from different files
-from settings.style import ROW_COLORS, SPACING
+from settings.style import SPACING, styleTable
 from settings.config import max_widths, FIELD_TYPES, InitialWidth, RowWidth, CREDIT_MAP, GENERIC_MAP
 
 # 🎛️ UI Utilities
-def auto_resize_columns(table, font_obj):
+def get_treeview_font(style):
+    font_name = style.lookup("Treeview", "font")
+
+    if not font_name:
+        font_name = "TkDefaultFont"
+
+    return tkFont.nametofont(font_name)
+
+
+def auto_resize_columns(table, style):
+    font_obj = get_treeview_font(style)
     for col in table['columns']:
         if col in max_widths:
             # Force fixed width
@@ -86,10 +97,6 @@ def populate_company_table(self):
 
     if not self.xml_root:
         return  # ⛔ No XML loaded yet → nothing to show
-    
-    # 🎨 Apply zebra colors
-    for tag, color in ROW_COLORS.items():
-        self.table.tag_configure(tag, background=color)
 
     # ➕ Insert updated company rows
     for idx, company in enumerate(self.xml_root.findall("Company")):
@@ -124,11 +131,13 @@ def populate_company_table(self):
 
         # Insert row
         values = (cid, cname, owner_name, hq_name, founded, death, funds)
+
+        styleTable(self)
         tag = "evenrow" if idx % 2 == 0 else "oddrow"
         self.table.insert("", tk.END, values=values, tags=(tag,))
 
     # 📏 Adjust column widths automatically
-    auto_resize_columns(self.table, self.font_obj)
+    auto_resize_columns(self.table, self.style)
 
 def refresh_editor_ui(self):
     """
@@ -190,11 +199,11 @@ def create_widget(editor, subframe, key, var, field_cfg, entry_width):
     field_type = field_cfg.get("type", "text")
 
     if field_type == "text":
-        return ttk.Entry(subframe, textvariable=var, width=entry_width, font=editor.font_obj), var
+        return ttk.Entry(subframe, textvariable=var, width=entry_width), var
 
     elif field_type == "number":
         vcmd = editor.root.register(validate_int)
-        entry = ttk.Entry(subframe, textvariable=var, width=entry_width, font=editor.font_obj, 
+        entry = ttk.Entry(subframe, textvariable=var, width=entry_width, 
                           validate="key", validatecommand=(vcmd, "%P"))
         return entry, var
 
@@ -227,8 +236,7 @@ def create_spinbox_with_optional_dropdown(editor, subframe, key, var, field_cfg,
         from_=min_val, to=max_val,
         increment=step,
         width=entry_width,
-        font=editor.font_obj,
-        format=fmt,
+        format=fmt
     )
 
     if field_cfg.get("with_dropdown"):
@@ -240,8 +248,7 @@ def create_spinbox_with_optional_dropdown(editor, subframe, key, var, field_cfg,
             subframe,
             textvariable=dropdown_var,
             values=list(getattr(editor, dropdown_source, {}).values()),
-            width=entry_width,
-            font=editor.font_obj,
+            width=entry_width
         )
         dropdown.pack(side="left", padx=(SPACING["xs"], SPACING["sm"]))
 

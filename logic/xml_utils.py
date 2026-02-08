@@ -3,6 +3,9 @@ import pandas as pd
 
 from logic.CRUD import build_new_company
 
+def importExcel(file_path):
+    pass
+
 # 📂 XML Load & Save
 def load_xml_file(file_path):
     """Return parsed XML root or raise a friendly error."""
@@ -125,11 +128,8 @@ def numericCheck(col):
     except Exception:
         print(f"Skipped non-numeric column: {col.name}")
         return col
-
-def ExportExcel(xml_root, file_path):
-    if not xml_root:
-        return
-
+    
+def XMLtoDF(xml_root):
     rows = []
     for company in xml_root.findall("Company"):
         row = {}
@@ -142,6 +142,17 @@ def ExportExcel(xml_root, file_path):
 
     df = pd.DataFrame(rows)
     df = df.apply(numericCheck)
+    return df
+
+def AnalyzeXML(xml_root):
+    df = XMLtoDF(xml_root)
+    pd.set_option("display.float_format", "{:.2f}".format)
+    print(df.describe().transpose())
+
+def ExportExcel(xml_root, file_path):
+    if not xml_root:
+        return
+    df = XMLtoDF(xml_root)
 
     with pd.ExcelWriter(file_path, engine="openpyxl") as writer:
         df.to_excel(writer, index=False, sheet_name="Companies")

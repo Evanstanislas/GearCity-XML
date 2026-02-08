@@ -20,6 +20,9 @@ def CreateButtons(self, main_frame):
     self.upload_btn = ttk.Button(btn_frame_left, text="Upload AI XML", command=self.upload_xml_file, bootstyle="info")
     self.upload_btn.pack(side="left", padx=SPACING["sm"])
 
+    self.import_btn = ttk.Button(btn_frame_left, text="Import from Excel", command=self.import_excel, bootstyle="info")
+    self.import_btn.pack(side="left", padx=SPACING["sm"])
+
     self.upload_city_btn = ttk.Button(btn_frame_left, text="Upload City XML", command=self.upload_city_xml, bootstyle="info")
     self.upload_city_btn.pack(side="left", padx=SPACING["sm"])
 
@@ -32,9 +35,16 @@ def CreateButtons(self, main_frame):
     self.exportExcel_btn = ttk.Button(btn_frame_left, text="Export to Excel", command=self.export_excel, state="disabled", bootstyle="light")
     self.exportExcel_btn.pack(side="left", padx=SPACING["sm"])
 
+    self.analyzeXML_btn = ttk.Button(btn_frame_left, text="Analyze XML", command=self.analyze_xml, state="disabled", bootstyle="light")
+    self.analyzeXML_btn.pack(side="left", padx=SPACING["sm"])
+    
+
     # RIGHT SIDE BUTTONS
     btn_frame_right = ttk.Frame(main_frame)
     btn_frame_right.grid(row=0, column=1, sticky="e", padx=SPACING["sm"], pady=SPACING["sm"])
+
+    self.change_theme = ttk.Checkbutton(btn_frame_right, text= "Switch to Light Mode", variable=self.mode, onvalue=0, offvalue=1, command=self.changeTheme, bootstyle="round-toggle")
+    self.change_theme.pack(side="left", padx=SPACING["sm"])
 
     self.add_button = ttk.Button(btn_frame_right, text="Add AI", command=self.add_new_company, state="disabled")
     self.add_button.pack(side="left", padx=SPACING["sm"])
@@ -53,6 +63,7 @@ def ActivateButton(self):
     self.saveAs_btn.config(state="normal")
     self.save_ai_btn.config(state="normal")
     self.exportExcel_btn.config(state="normal")
+    self.analyzeXML_btn.config(state="normal")
     self.add_button.config(state="normal")
     self.delete_ai_btn.config(state="normal")
     self.generic_ai_btn.config(state="normal")
@@ -162,7 +173,7 @@ def make_multi_entry(editor, frame, fields):
 
         var = ttk.StringVar(value="")
         lbl = ttk.Label(subframe, text=f"{display_name}: ",
-                        width=label_width, anchor="w", font=editor.font_obj)
+                        width=label_width, anchor="w")
         lbl.pack(side="left")
 
         field_cfg = FIELD_TYPES.get(key, {"type": "text"})
@@ -200,7 +211,6 @@ def make_preset_dropdown(editor, frame, key, display_name, presets_dict, apply_f
         subframe,
         text=f"{display_name}: ",
         width=InitialWidth, anchor="w",
-        font=editor.font_obj
     )
     lbl.pack(side="left")
 
@@ -215,8 +225,7 @@ def make_preset_dropdown(editor, frame, key, display_name, presets_dict, apply_f
         textvariable=var,
         values=values,
         width=InitialWidth,
-        state="readonly",
-        font=editor.font_obj
+        state="readonly"
     )
     dropdown.pack(side="left")
 

@@ -10,7 +10,7 @@ from logic.CRUD import (build_new_company, get_company_details, write_company_ch
                    delete_company_and_reindex, pick_new_selection, prepare_field_value, 
                    apply_generic_ai, get_selected_company, reselect_company)
 from logic.xml_utils import (load_xml_file, save_xml_to_file, build_new_xml_with_company, 
-                       build_city_map_from_xml, load_city_xml, ExportExcel)
+                       build_city_map_from_xml, load_city_xml, ExportExcel, AnalyzeXML, importExcel)
 from logic.ui_utils import refresh_editor_ui
 
 class XMLEditor:
@@ -20,9 +20,10 @@ class XMLEditor:
         self.style = ttk.Style("cyborg")
         self.root.title("Gearcity XML Editor")
         self.root.geometry("1400x800")
+        self.mode = ttk.IntVar()
 
         # Apply external styles 🎨
-        self.font_obj = setup_styles(self.style)
+        setup_styles(self)
         # Unbound the scroll wheel from SpinBox and ComboBox
         unbound(self.root)
         self.company_map = {}
@@ -34,13 +35,23 @@ class XMLEditor:
         main_frame.pack(fill="both", expand=True)
 
         # 2 columns: left = details, right = table
-        main_frame.columnconfigure(0, weight=1, minsize=700)
-        main_frame.columnconfigure(1, weight=3, minsize=400)
+        main_frame.columnconfigure(0, weight=1, minsize=500)
+        main_frame.columnconfigure(1, weight=3, minsize=600)
         main_frame.rowconfigure(1, weight=1)
 
         CreateButtons(self, main_frame)
         CreateCompanyDetails(self, main_frame)
         CreateTable(self, main_frame)
+
+    def changeTheme(self):
+        if self.mode.get() == 0:
+            self.style.theme_use("cyborg")
+            setup_styles(self)
+            self.change_theme.config(text="Switch to Light Mode")
+        else:
+            self.style.theme_use("flatly")
+            setup_styles(self)
+            self.change_theme.config(text="Switch to Dark Mode")
 
     # 🎛️ UI Event Handlers
     def show_details(self, event):
@@ -65,6 +76,24 @@ class XMLEditor:
                     if dropdown_var is not None:
                         dropdown_var.set(dropdown_val)
 
+    def new_ai_xml(self):
+        # ⚠️ Confirm with the user before wiping
+        if hasattr(self, "xml_root") and self.xml_root is not None:
+            if not Messagebox.show_question("This will erase the current XML. Continue?", "Confirm"):
+                return
+
+        # Build a brand-new XML
+        self.xml_root = build_new_xml_with_company()
+
+        # Reset last_file, so Save As is required
+        self.last_file = None
+
+        # Refresh UI
+        refresh_editor_ui(self)
+        ActivateButton(self)
+
+        Messagebox.show_info("A new AI XML has been created with 1 starter company.", "New XML")
+
     # Upload Files
     def upload_xml_file(self):
         """Open file dialog, load XML, refresh UI."""
@@ -87,6 +116,18 @@ class XMLEditor:
 
         except Exception as e:
             Messagebox.show_error(f"Something went wrong 😢\n\n{e}", "Unexpected Error")
+    
+    def import_excel(self):
+        if hasattr(self, "xml_root") and self.xml_root is not None:
+            if not Messagebox.show_question("This will erase the current XML. Continue?", "Confirm"):
+                return
+
+        file_path = filedialog.askopenfilename(
+            title="Select Excel Files",
+            filetypes=[("Excel Files", "*.xlsx")]
+        )
+        importExcel(file_path)
+
 
     def upload_city_xml(self):
         # Open file dialog to select XML
@@ -105,7 +146,7 @@ class XMLEditor:
 
     # 📝 Company CRUD
     def add_new_company(self):
-        new_company, new_id = build_new_company(self.xml_root)
+        new_company, _ = build_new_company(self.xml_root)
         self.xml_root.append(new_company)
 
         refresh_editor_ui(self)
@@ -203,24 +244,6 @@ class XMLEditor:
         except Exception as e:
             Messagebox.show_error(f"Failed to save XML:\n{e}", "Error")
 
-    def new_ai_xml(self):
-        # ⚠️ Confirm with the user before wiping
-        if hasattr(self, "xml_root") and self.xml_root is not None:
-            if not Messagebox.show_question("This will erase the current XML. Continue?", "Confirm"):
-                return
-
-        # Build a brand-new XML
-        self.xml_root = build_new_xml_with_company()
-
-        # Reset last_file, so Save As is required
-        self.last_file = None
-
-        # Refresh UI
-        refresh_editor_ui(self)
-        ActivateButton(self)
-
-        Messagebox.show_info("A new AI XML has been created with 1 starter company.", "New XML")
-
     # Export Excel
     def export_excel(self):
         file_path = filedialog.asksaveasfilename(
@@ -232,6 +255,9 @@ class XMLEditor:
         ExportExcel(self.xml_root, file_path)
 
         Messagebox.show_info(f"XML has been exported as {file_path}", "Exported")
+
+    def analyze_xml(self):
+        AnalyzeXML(self.xml_root)
 
     def run(self):
         self.root.mainloop()
