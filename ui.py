@@ -9,61 +9,52 @@ from logic.preset_utils import PRESET_CONFIG
 from logic.ui_utils import compute_entry_widths, create_widget, sort_by_column
 
 # Create Buttons
+def CreateMenuBar(self):
+    menubar = ttk.Menu(self.root)
+
+    # FILE MENU
+    file_menu = ttk.Menu(menubar, tearoff=0)
+    file_menu.add_command(label="New AI XML", command=self.new_ai_xml)
+    file_menu.add_command(label="Upload AI XML", command=self.upload_xml_file)
+    file_menu.add_separator()
+    file_menu.add_command(label="Upload from Excel", command=self.import_excel)
+    file_menu.add_separator()
+    file_menu.add_command(label="Save", command=self.save_quick)
+    file_menu.add_command(label="Save As", command=self.save_to_xml)
+    file_menu.add_separator()
+    file_menu.add_command(label="Export to Excel", command=self.export_excel)
+    menubar.add_cascade(label="File", menu=file_menu)
+
+    # TOOLS MENU
+    tools_menu = ttk.Menu(menubar, tearoff=0)
+    tools_menu.add_command(label="Upload City XML", command=self.upload_city_xml)
+    tools_menu.add_command(label="Analyze XML", command=self.analyze_xml)
+    menubar.add_cascade(label="Tools", menu=tools_menu)
+
+    view_menu = ttk.Menu(menubar, tearoff=0)
+    self.change_theme = view_menu.add_checkbutton(label="Light Mode", variable=self.mode, onvalue=0, offvalue=1, command=self.changeTheme)
+    menubar.add_cascade(label="View", menu=view_menu)
+
+    self.root.config(menu=menubar)
+
 def CreateButtons(self, main_frame):
-    # LEFT SIDE BUTTONS
-    btn_frame_left = ttk.Frame(main_frame)
-    btn_frame_left.grid(row=0, column=0, sticky="w", padx=SPACING["sm"], pady=SPACING["sm"])
+    btn_frame = ttk.Frame(main_frame)
+    btn_frame.grid(row=0, column=0, padx=SPACING["sm"], pady=SPACING["sm"])
 
-    self.new_btn = ttk.Button(btn_frame_left, text="New AI XML", command=self.new_ai_xml, bootstyle="secondary")
-    self.new_btn.pack(side="left", padx=SPACING["sm"])
-
-    self.upload_btn = ttk.Button(btn_frame_left, text="Upload AI XML", command=self.upload_xml_file, bootstyle="info")
-    self.upload_btn.pack(side="left", padx=SPACING["sm"])
-
-    self.import_btn = ttk.Button(btn_frame_left, text="Import from Excel", command=self.import_excel, bootstyle="info")
-    self.import_btn.pack(side="left", padx=SPACING["sm"])
-
-    self.upload_city_btn = ttk.Button(btn_frame_left, text="Upload City XML", command=self.upload_city_xml, bootstyle="info")
-    self.upload_city_btn.pack(side="left", padx=SPACING["sm"])
-
-    self.save_btn = ttk.Button(btn_frame_left, text="Save", command=self.save_quick, state="disabled")
-    self.save_btn.pack(side="left", padx=SPACING["sm"])
-
-    self.saveAs_btn = ttk.Button(btn_frame_left, text="Save As", command=self.save_to_xml, state="disabled")
-    self.saveAs_btn.pack(side="left", padx=SPACING["sm"])
-
-    self.exportExcel_btn = ttk.Button(btn_frame_left, text="Export to Excel", command=self.export_excel, state="disabled", bootstyle="light")
-    self.exportExcel_btn.pack(side="left", padx=SPACING["sm"])
-
-    self.analyzeXML_btn = ttk.Button(btn_frame_left, text="Analyze XML", command=self.analyze_xml, state="disabled", bootstyle="light")
-    self.analyzeXML_btn.pack(side="left", padx=SPACING["sm"])
-    
-
-    # RIGHT SIDE BUTTONS
-    btn_frame_right = ttk.Frame(main_frame)
-    btn_frame_right.grid(row=0, column=1, sticky="e", padx=SPACING["sm"], pady=SPACING["sm"])
-
-    self.change_theme = ttk.Checkbutton(btn_frame_right, text= "Switch to Light Mode", variable=self.mode, onvalue=0, offvalue=1, command=self.changeTheme, bootstyle="round-toggle")
-    self.change_theme.pack(side="left", padx=SPACING["sm"])
-
-    self.add_button = ttk.Button(btn_frame_right, text="Add AI", command=self.add_new_company, state="disabled")
+    self.add_button = ttk.Button(btn_frame, text="Add AI", command=self.add_new_company, state="disabled")
     self.add_button.pack(side="left", padx=SPACING["sm"])
 
-    self.save_ai_btn = ttk.Button(btn_frame_right, text="Save AI", command=self.save_ai_company, state="disabled", bootstyle="success")
+    self.save_ai_btn = ttk.Button(btn_frame, text="Save AI", command=self.save_ai_company, state="disabled", bootstyle="success")
     self.save_ai_btn.pack(side="left", padx=SPACING["sm"])
 
-    self.delete_ai_btn = ttk.Button(btn_frame_right, text="Delete AI", command=self.delete_ai_company, state="disabled", bootstyle="danger")
+    self.delete_ai_btn = ttk.Button(btn_frame, text="Delete AI", command=self.delete_ai_company, state="disabled", bootstyle="danger")
     self.delete_ai_btn.pack(side="left", padx=SPACING["sm"])
 
-    self.generic_ai_btn = ttk.Button(btn_frame_right, text="Generic AI", command=self.generic_ai_company, state="disabled", bootstyle="secondary")
+    self.generic_ai_btn = ttk.Button(btn_frame, text="Generic AI", command=self.generic_ai_company, state="disabled", bootstyle="secondary")
     self.generic_ai_btn.pack(side="left", padx=SPACING["sm"])
 
 def ActivateButton(self):
-    self.save_btn.config(state="normal")
-    self.saveAs_btn.config(state="normal")
     self.save_ai_btn.config(state="normal")
-    self.exportExcel_btn.config(state="normal")
-    self.analyzeXML_btn.config(state="normal")
     self.add_button.config(state="normal")
     self.delete_ai_btn.config(state="normal")
     self.generic_ai_btn.config(state="normal")
@@ -71,7 +62,7 @@ def ActivateButton(self):
 # Creating table
 def CreateTable(self, main_frame):
     table_frame = ttk.Frame(main_frame)
-    table_frame.grid(row=1, column=1, sticky="nsew", padx=SPACING["md"], pady=SPACING["md"])
+    table_frame.grid(row=1, column=0, sticky="nsew", padx=SPACING["md"], pady=SPACING["md"])
 
     self.table = ttk.Treeview(table_frame)
     self.table['columns'] = ("ID", "Name", "Owner", "HQ", "Founded", "Death", "Funds")
@@ -101,7 +92,7 @@ def CreateCompanyDetails(app, main_frame):
     # Outer container (fixed area)
     detail_frame = ttk.Frame(main_frame)
     detail_frame.grid(
-        row=1, column=0, sticky="nsew",
+        row=0, column=0, sticky="nsew",
         padx=SPACING["md"], pady=SPACING["md"]
     )
     detail_frame.grid_propagate(False)

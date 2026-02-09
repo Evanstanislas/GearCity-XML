@@ -5,12 +5,12 @@ from ttkbootstrap.dialogs import Messagebox
 
 # Import from files
 from settings.style import setup_styles, SPACING, unbound
-from ui import CreateTable, CreateCompanyDetails, CreateButtons, ActivateButton
+from ui import CreateTable, CreateCompanyDetails, CreateButtons, ActivateButton, CreateMenuBar
 from logic.CRUD import (build_new_company, get_company_details, write_company_changes, 
                    delete_company_and_reindex, pick_new_selection, prepare_field_value, 
                    apply_generic_ai, get_selected_company, reselect_company)
 from logic.xml_utils import (load_xml_file, save_xml_to_file, build_new_xml_with_company, 
-                       build_city_map_from_xml, load_city_xml, ExportExcel, AnalyzeXML, importExcel)
+                       build_city_map_from_xml, load_city_xml, ExportExcel, AnalyzeXML, importExcel, has_xml)
 from logic.ui_utils import refresh_editor_ui
 
 class XMLEditor:
@@ -35,23 +35,43 @@ class XMLEditor:
         main_frame.pack(fill="both", expand=True)
 
         # 2 columns: left = details, right = table
-        main_frame.columnconfigure(0, weight=1, minsize=500)
-        main_frame.columnconfigure(1, weight=3, minsize=600)
-        main_frame.rowconfigure(1, weight=1)
+        main_frame.columnconfigure(0, weight=1, minsize=700)
+        main_frame.columnconfigure(1, weight=3, minsize=400)
+        main_frame.rowconfigure(0, weight=1)
 
-        CreateButtons(self, main_frame)
+        CreateMenuBar(self)
         CreateCompanyDetails(self, main_frame)
-        CreateTable(self, main_frame)
+
+        # RIGHT: container
+        right_frame = ttk.Frame(main_frame)
+        right_frame.grid(row=0, column=1, sticky="nsew")
+
+        right_frame.columnconfigure(0, weight=1)
+        right_frame.rowconfigure(1, weight=1)  # table expands
+        CreateButtons(self, right_frame)
+        CreateTable(self, right_frame)
+
+    def checkXML(self):
+        if not has_xml(getattr(self, "xml_root", None)):
+            Messagebox.show_error("There's no XML yet", "Error")
+            return False
+        return True
+    
+    def overwriteXML(self):
+        if hasattr(self, "xml_root") and self.xml_root is not None:
+            return Messagebox.show_question(
+                "This will erase the current XML. Continue?",
+                "Confirm"
+            )
+        return True
 
     def changeTheme(self):
         if self.mode.get() == 0:
             self.style.theme_use("cyborg")
             setup_styles(self)
-            self.change_theme.config(text="Switch to Light Mode")
         else:
             self.style.theme_use("flatly")
             setup_styles(self)
-            self.change_theme.config(text="Switch to Dark Mode")
 
     # 🎛️ UI Event Handlers
     def show_details(self, event):
@@ -78,9 +98,8 @@ class XMLEditor:
 
     def new_ai_xml(self):
         # ⚠️ Confirm with the user before wiping
-        if hasattr(self, "xml_root") and self.xml_root is not None:
-            if not Messagebox.show_question("This will erase the current XML. Continue?", "Confirm"):
-                return
+        if not self.overwriteXML():
+            return
 
         # Build a brand-new XML
         self.xml_root = build_new_xml_with_company()
@@ -97,6 +116,9 @@ class XMLEditor:
     # Upload Files
     def upload_xml_file(self):
         """Open file dialog, load XML, refresh UI."""
+        if not self.overwriteXML():
+            return
+
         file_path = filedialog.askopenfilename(
             title="Select XML File",
             filetypes=[("XML files", "*.xml")]
@@ -204,10 +226,9 @@ class XMLEditor:
 
     # 📂 File Handling (Load/Save/New)
     def save_to_xml(self):
-        if not hasattr(self, "xml_root") or self.xml_root is None:
-            Messagebox.show_warning("Please load or create an XML before saving.", "No XML Loaded")
+        if not self.checkXML():
             return
-
+        
         initial_file = getattr(self, "last_file", "companies.xml")
 
         file_path = filedialog.asksaveasfilename(
@@ -229,10 +250,8 @@ class XMLEditor:
 
     def save_quick(self):
         """Quick-save: overwrite last loaded/saved file directly."""
-        if not hasattr(self, "xml_root") or self.xml_root is None:
-            Messagebox.show_warning("Please load or create an XML before saving.", "No XML Loaded")
+        if not self.checkXML():
             return
-
         # Fall back to Save As if no known file
         if not hasattr(self, "last_file") or not self.last_file:
             self.save_to_xml()
@@ -246,6 +265,8 @@ class XMLEditor:
 
     # Export Excel
     def export_excel(self):
+        if not self.checkXML():
+            return
         file_path = filedialog.asksaveasfilename(
                     defaultextension=".xlsx",
                     filetypes=[("Excel Files", "*.xlsx")]
@@ -253,10 +274,11 @@ class XMLEditor:
         if not file_path:
             return
         ExportExcel(self.xml_root, file_path)
-
         Messagebox.show_info(f"XML has been exported as {file_path}", "Exported")
-
+        
     def analyze_xml(self):
+        if not self.checkXML():
+            return
         AnalyzeXML(self.xml_root)
 
     def run(self):

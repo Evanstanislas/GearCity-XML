@@ -16,7 +16,6 @@ def get_treeview_font(style):
 
     return tkFont.nametofont(font_name)
 
-
 def auto_resize_columns(table, style):
     font_obj = get_treeview_font(style)
     for col in table['columns']:
