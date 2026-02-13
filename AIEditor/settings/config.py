@@ -16,10 +16,6 @@ max_widths = {
     "Death": 60      # cap Death
 }
 
-# For the input fields
-InitialWidth=22
-RowWidth=6
-
 FIELD_LAYOUT = {
     "Identity": [
         ("single", [("Company_ID", "ID")]),

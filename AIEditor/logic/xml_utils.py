@@ -1,14 +1,10 @@
 import xml.etree.ElementTree as ET
 import pandas as pd
-from ttkbootstrap.dialogs import Messagebox
 
-from logic.CRUD import build_new_company
+from AIEditor.logic.CRUD import build_new_company
 
 def has_xml(xml_root):
     return xml_root is not None
-
-def importExcel(file_path):
-    pass
 
 # 📂 XML Load & Save
 def load_xml_file(file_path):

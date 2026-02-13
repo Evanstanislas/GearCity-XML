@@ -1,5 +1,5 @@
-from settings.preset import Funds_Preset, Skills_Preset, Design_Preset, Image_Preset, Behavior_Preset, Aggressions_Preset
-from settings.config import CREDIT_MAP_REV, GENERIC_MAP_REV
+from AIEditor.settings.preset import Funds_Preset, Skills_Preset, Design_Preset, Image_Preset, Behavior_Preset, Aggressions_Preset
+from AIEditor.settings.config import CREDIT_MAP_REV, GENERIC_MAP_REV
 
 def apply_funds_preset(editor, preset_name):
     """Apply a funds preset using formula with StartYear and Power."""

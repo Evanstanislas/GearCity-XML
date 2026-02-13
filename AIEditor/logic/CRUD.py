@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 from ttkbootstrap.dialogs import Messagebox
 
 #import from different files
-from settings.config import CREDIT_MAP, CREDIT_MAP_REV, GENERIC_MAP, GENERIC_MAP_REV, FIELD_TYPES, GENERIC_AI_TEMPLATE
+from AIEditor.settings.config import CREDIT_MAP, CREDIT_MAP_REV, GENERIC_MAP, GENERIC_MAP_REV, FIELD_TYPES, GENERIC_AI_TEMPLATE
 
 def get_selected_company(self, *, require_xml=True):
     """

@@ -22,6 +22,10 @@ SPACING = {
     "md": 10,
 }
 
+# For the input fields
+InitialWidth=22
+RowWidth=6
+
 def setup_styles(self):
     self.root.option_add("*Font", base_font)
     self.style.configure("Treeview", rowheight=25)

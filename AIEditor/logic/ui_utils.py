@@ -4,8 +4,8 @@ import ttkbootstrap as ttk
 import tkinter.font as tkFont
 
 # import from different files
-from settings.style import SPACING, styleTable
-from settings.config import max_widths, FIELD_TYPES, InitialWidth, RowWidth, CREDIT_MAP, GENERIC_MAP
+from style import SPACING, InitialWidth, RowWidth
+from AIEditor.settings.config import max_widths, FIELD_TYPES, CREDIT_MAP, GENERIC_MAP
 
 # 🎛️ UI Utilities
 def get_treeview_font(style):
@@ -131,7 +131,6 @@ def populate_company_table(self):
         # Insert row
         values = (cid, cname, owner_name, hq_name, founded, death, funds)
 
-        styleTable(self)
         tag = "evenrow" if idx % 2 == 0 else "oddrow"
         self.table.insert("", tk.END, values=values, tags=(tag,))
 

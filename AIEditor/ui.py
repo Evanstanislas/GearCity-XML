@@ -3,39 +3,10 @@ import ttkbootstrap as ttk
 from ttkbootstrap.scrolled import ScrolledFrame
 
 #import from different files
-from settings.config import column_widths, InitialWidth, FIELD_TYPES, FIELD_LAYOUT, GENERIC_MAP, CREDIT_MAP
-from settings.style import SPACING
-from logic.preset_utils import PRESET_CONFIG
-from logic.ui_utils import compute_entry_widths, create_widget, sort_by_column
-
-# Create Buttons
-def CreateMenuBar(self):
-    menubar = ttk.Menu(self.root)
-
-    # FILE MENU
-    file_menu = ttk.Menu(menubar, tearoff=0)
-    file_menu.add_command(label="New AI XML", command=self.new_ai_xml)
-    file_menu.add_command(label="Upload AI XML", command=self.upload_xml_file)
-    file_menu.add_separator()
-    file_menu.add_command(label="Upload from Excel", command=self.import_excel)
-    file_menu.add_separator()
-    file_menu.add_command(label="Save", command=self.save_quick)
-    file_menu.add_command(label="Save As", command=self.save_to_xml)
-    file_menu.add_separator()
-    file_menu.add_command(label="Export to Excel", command=self.export_excel)
-    menubar.add_cascade(label="File", menu=file_menu)
-
-    # TOOLS MENU
-    tools_menu = ttk.Menu(menubar, tearoff=0)
-    tools_menu.add_command(label="Upload City XML", command=self.upload_city_xml)
-    tools_menu.add_command(label="Analyze XML", command=self.analyze_xml)
-    menubar.add_cascade(label="Tools", menu=tools_menu)
-
-    view_menu = ttk.Menu(menubar, tearoff=0)
-    self.change_theme = view_menu.add_checkbutton(label="Light Mode", variable=self.mode, onvalue=0, offvalue=1, command=self.changeTheme)
-    menubar.add_cascade(label="View", menu=view_menu)
-
-    self.root.config(menu=menubar)
+from AIEditor.settings.config import column_widths, FIELD_TYPES, FIELD_LAYOUT, GENERIC_MAP, CREDIT_MAP
+from style import SPACING, InitialWidth
+from AIEditor.logic.preset_utils import PRESET_CONFIG
+from AIEditor.logic.ui_utils import compute_entry_widths, create_widget, sort_by_column
 
 def CreateButtons(self, main_frame):
     btn_frame = ttk.Frame(main_frame)
@@ -53,11 +24,15 @@ def CreateButtons(self, main_frame):
     self.generic_ai_btn = ttk.Button(btn_frame, text="Generic AI", command=self.generic_ai_company, state="disabled", bootstyle="secondary")
     self.generic_ai_btn.pack(side="left", padx=SPACING["sm"])
 
+    self.switch_mode_btn = ttk.Button(btn_frame, text="Switch Mode", command=self.switch_mode, state="disabled", bootstyle="secondary")
+    self.switch_mode_btn.pack(side="left", padx=SPACING["sm"])
+
 def ActivateButton(self):
     self.save_ai_btn.config(state="normal")
     self.add_button.config(state="normal")
     self.delete_ai_btn.config(state="normal")
     self.generic_ai_btn.config(state="normal")
+    self.switch_mode_btn.config(state="normal")
 
 # Creating table
 def CreateTable(self, main_frame):
