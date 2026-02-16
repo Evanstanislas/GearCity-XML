@@ -90,6 +90,11 @@ def populate_company_table(self):
     """
     Repopulate the company table with data from the XML file.
     """
+    if not getattr(self, "table_available", True):
+        return
+    if not hasattr(self, "table") or self.table is None:
+        return
+
     # 🧹 Clear old rows
     for row in self.table.get_children():
         self.table.delete(row)
@@ -155,7 +160,7 @@ def refresh_editor_ui(self):
         self.company_map = {}
 
     # 🖼️ Repopulate the company table (only if company data exists)
-    if hasattr(self, "xml_root") and self.xml_root is not None:
+    if hasattr(self, "xml_root") and self.xml_root is not None and getattr(self, "table_available", True):
         populate_company_table(self)
 
     # ⬇️ Refresh dropdown values dynamically

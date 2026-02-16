@@ -20,6 +20,9 @@ class AIEditor(ttk.Frame):
         self.app = app
         self.root = app.root
         self.style = app.style
+        self.editor_mode = "table"
+        self.table_available = True
+        self.placeholder_label = None
         self.company_map = {}
         self.city_map = {}
         self.preset_vars = {}
@@ -42,7 +45,58 @@ class AIEditor(ttk.Frame):
         right_frame.columnconfigure(0, weight=1)
         right_frame.rowconfigure(1, weight=1)  # table expands
         CreateButtons(self, right_frame)
-        CreateTable(self, right_frame)
+        self.right_content_frame = ttk.Frame(right_frame)
+        self.right_content_frame.grid(row=1, column=0, sticky="nsew")
+        self.right_content_frame.columnconfigure(0, weight=1)
+        self.right_content_frame.rowconfigure(0, weight=1)
+
+        CreateTable(self, self.right_content_frame)
+        self.sync_editor_action_buttons()
+
+    def has_loaded_xml(self):
+        return hasattr(self, "xml_root") and self.xml_root is not None
+
+    def is_table_usable(self):
+        if not getattr(self, "table_available", False):
+            return False
+        return hasattr(self, "table") and self.table is not None
+
+    def ensure_placeholder_view(self):
+        if self.placeholder_label is None:
+            self.placeholder_label = ttk.Label(
+                self.right_content_frame,
+                text="Mode coming soon",
+                anchor="center"
+            )
+
+    def show_table_view(self):
+        self.ensure_placeholder_view()
+        self.placeholder_label.grid_remove()
+        self.table_container.grid()
+        self.editor_mode = "table"
+        self.table_available = True
+
+    def show_placeholder_view(self):
+        self.ensure_placeholder_view()
+        self.table_container.grid_remove()
+        self.placeholder_label.grid(row=0, column=0, sticky="nsew", padx=SPACING["md"], pady=SPACING["md"])
+        self.editor_mode = "placeholder"
+        self.table_available = False
+
+    def sync_editor_action_buttons(self):
+        has_xml = self.has_loaded_xml()
+        table_mode = self.editor_mode == "table"
+
+        if table_mode and has_xml:
+            table_state = "normal"
+        else:
+            table_state = "disabled"
+
+        self.save_ai_btn.config(state=table_state)
+        self.add_button.config(state=table_state)
+        self.delete_ai_btn.config(state=table_state)
+        self.generic_ai_btn.config(state=table_state)
+        self.switch_mode_btn.config(state="normal" if has_xml else "disabled")
 
     def checkXML(self):
         if not has_xml(getattr(self, "xml_root", None)):
@@ -60,6 +114,9 @@ class AIEditor(ttk.Frame):
 
     # 🎛️ UI Event Handlers
     def show_details(self, event):
+        if not self.is_table_usable():
+            return
+
         selected_item = self.table.selection()
         if not selected_item:
             return
@@ -250,7 +307,11 @@ class AIEditor(ttk.Frame):
         Messagebox.show_info(f"XML has been exported as {file_path}", "Exported")
 
     def switch_mode(self):
-        print("We'll do something soon")
+        if self.editor_mode == "table":
+            self.show_placeholder_view()
+        else:
+            self.show_table_view()
+        self.sync_editor_action_buttons()
         
     def analyze_xml(self):
         if not self.checkXML():

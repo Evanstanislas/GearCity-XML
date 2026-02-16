@@ -14,6 +14,12 @@ def get_selected_company(self, *, require_xml=True):
     if require_xml and (not hasattr(self, "xml_root") or self.xml_root is None):
         Messagebox.show_warning("Please load an XML first.", "No XML Loaded")
         return None, None, None
+    if not getattr(self, "table_available", True):
+        Messagebox.show_warning("Table is hidden. Switch back to table mode first.", "Table Hidden")
+        return None, None, None
+    if not hasattr(self, "table") or self.table is None:
+        Messagebox.show_warning("Table is not available right now.", "Table Missing")
+        return None, None, None
 
     sel = self.table.selection()
     if not sel:
@@ -38,6 +44,13 @@ def get_selected_company(self, *, require_xml=True):
     return company, company_id, index
 
 def reselect_company(self, company_id):
+    if not getattr(self, "table_available", True):
+        Messagebox.show_warning("Table is hidden. Switch back to table mode first.", "Table Hidden")
+        return False
+    if not hasattr(self, "table") or self.table is None:
+        Messagebox.show_warning("Table is not available right now.", "Table Missing")
+        return False
+
     for iid in self.table.get_children():
         vals = self.table.item(iid)['values']
         

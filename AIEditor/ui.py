@@ -28,6 +28,9 @@ def CreateButtons(self, main_frame):
     self.switch_mode_btn.pack(side="left", padx=SPACING["sm"])
 
 def ActivateButton(self):
+    if hasattr(self, "sync_editor_action_buttons"):
+        self.sync_editor_action_buttons()
+        return
     self.save_ai_btn.config(state="normal")
     self.add_button.config(state="normal")
     self.delete_ai_btn.config(state="normal")
@@ -37,7 +40,8 @@ def ActivateButton(self):
 # Creating table
 def CreateTable(self, main_frame):
     table_frame = ttk.Frame(main_frame)
-    table_frame.grid(row=1, column=0, sticky="nsew", padx=SPACING["md"], pady=SPACING["md"])
+    table_frame.grid(row=0, column=0, sticky="nsew", padx=SPACING["md"], pady=SPACING["md"])
+    self.table_container = table_frame
 
     self.table = ttk.Treeview(table_frame)
     self.table['columns'] = ("ID", "Name", "Owner", "HQ", "Founded", "Death", "Funds")
