@@ -1,12 +1,28 @@
 # import from packages
 import ttkbootstrap as ttk
 from ttkbootstrap.scrolled import ScrolledFrame
+from ttkbootstrap.tableview import Tableview
 
 #import from different files
 from AIEditor.settings.config import column_widths, FIELD_TYPES, FIELD_LAYOUT, GENERIC_MAP, CREDIT_MAP
-from style import SPACING, InitialWidth
+from style import (
+    SPACING,
+    InitialWidth,
+    TABLEVIEW_STYLE,
+    TABLEVIEW_ROW_HEIGHT,
+)
 from AIEditor.logic.preset_utils import PRESET_CONFIG
-from AIEditor.logic.ui_utils import compute_entry_widths, create_widget, sort_by_column
+from AIEditor.logic.tableview_editing import (
+    cancel_tableview_cell_edit,
+    start_tableview_cell_edit,
+)
+from AIEditor.logic.ui_utils import (
+    compute_entry_widths,
+    create_widget,
+    sort_by_column,
+    build_tableview_column_options,
+    populate_company_tableview,
+)
 
 def CreateButtons(self, main_frame):
     btn_frame = ttk.Frame(main_frame)
@@ -65,6 +81,79 @@ def CreateTable(self, main_frame):
 
     self.table.bind("<<TreeviewSelect>>", self.show_details)
 
+def CreateSecondaryTableview(self, main_frame):
+    tableview_frame = ttk.Frame(main_frame)
+    tableview_frame.grid(row=0, column=0, sticky="nsew", padx=SPACING["md"], pady=SPACING["md"])
+    self.tableview_container = tableview_frame
+    tableview_frame.columnconfigure(0, weight=1)
+    tableview_frame.rowconfigure(1, weight=1)
+
+    control_frame = ttk.Frame(tableview_frame)
+    control_frame.grid(row=0, column=0, sticky="ew", pady=(0, SPACING["sm"]))
+    control_frame.columnconfigure(1, weight=1)
+
+    ttk.Label(control_frame, text="Which column do you want to be available:").grid(
+        row=0, column=0, sticky="w", padx=(0, SPACING["sm"])
+    )
+
+    self.tableview_column_options = build_tableview_column_options()
+    self.tableview_column_var = ttk.StringVar()
+    self.tableview_column_combo = ttk.Combobox(
+        control_frame,
+        textvariable=self.tableview_column_var,
+        values=list(self.tableview_column_options.keys()),
+        state="readonly",
+        width=35,
+    )
+    self.tableview_column_combo.grid(row=0, column=1, sticky="ew")
+    self.tableview_pending_edits = {}
+    self.tableview_inline_editor = None
+    self.tableview_edit_context = None
+
+    self.tableview_selected_field_key = "Funds_OnHand"
+    default_label = None
+    for label, field_key in self.tableview_column_options.items():
+        if field_key == self.tableview_selected_field_key:
+            default_label = label
+            break
+    if default_label is None and self.tableview_column_options:
+        default_label = next(iter(self.tableview_column_options.keys()))
+        self.tableview_selected_field_key = self.tableview_column_options[default_label]
+    if default_label is None:
+        default_label = "Starting Funds"
+    self.tableview_column_var.set(default_label)
+
+    def on_column_change(event=None):
+        cancel_tableview_cell_edit(self)
+        selected_label = self.tableview_column_var.get()
+        self.tableview_selected_field_key = self.tableview_column_options.get(selected_label, "Funds_OnHand")
+        populate_company_tableview(self)
+
+    self.tableview_column_combo.bind("<<ComboboxSelected>>", on_column_change)
+
+    coldata = [
+        {"text": "ID", "stretch": False},
+        {"text": "Name", "stretch": True},
+        {"text": default_label, "stretch": True},
+    ]
+    rowdata = []
+
+    self.secondary_tableview = Tableview(
+        master=tableview_frame,
+        coldata=coldata,
+        rowdata=rowdata,
+        paginated=False,
+        searchable=False,
+        autofit=True,
+        autoalign=False,
+        stripecolor=None,
+        yscrollbar=True
+    )
+    self.secondary_tableview.grid(row=1, column=0, sticky="nsew")
+    self.style.configure(TABLEVIEW_STYLE, rowheight=TABLEVIEW_ROW_HEIGHT)
+    self.secondary_tableview.view.configure(style=TABLEVIEW_STYLE)
+    self.secondary_tableview.view.bind("<Double-1>", lambda e: start_tableview_cell_edit(self, e))
+
 def CreateCompanyDetails(app, main_frame):
     """Build company detail frames and entries"""
 
@@ -103,11 +192,7 @@ def CreateCompanyDetails(app, main_frame):
         frame = frames[section]
         for ftype, fdefs in fields:
             if ftype == "single":
-                make_single_entry(app, frame, fdefs[0][0], fdefs[0][1])
-            elif ftype == "double":
-                make_double_entry(app, frame, fdefs)
-            elif ftype == "triple":
-                make_triple_entry(app, frame, fdefs)
+                make_multi_entry(app, frame, [(fdefs[0][0], fdefs[0][1])])
             elif ftype == "preset":
                 key, label = fdefs[0]
                 cfg = PRESET_CONFIG.get(key)
@@ -120,16 +205,9 @@ def CreateCompanyDetails(app, main_frame):
                         cfg["dict"],
                         cfg["apply"],
                     )
+            else:
+                make_multi_entry(app, frame, fdefs)
     return detail_frame
-
-def make_single_entry(editor, frame, key, display_name):
-    make_multi_entry(editor, frame, [(key, display_name)])
-
-def make_double_entry(editor, frame, fields):
-    make_multi_entry(editor, frame, fields)
-
-def make_triple_entry(editor, frame, fields):
-    make_multi_entry(editor, frame, fields)
 
 def make_multi_entry(editor, frame, fields):
     row = ttk.Frame(frame)

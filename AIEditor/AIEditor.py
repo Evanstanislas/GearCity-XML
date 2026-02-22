@@ -4,14 +4,14 @@ from tkinter import filedialog
 from ttkbootstrap.dialogs import Messagebox
 
 # Import from files
-from style import SPACING
-from AIEditor.ui import CreateTable, CreateCompanyDetails, CreateButtons, ActivateButton
+from style import SPACING, TABLEVIEW_STYLE, TABLEVIEW_ROW_HEIGHT
+from AIEditor.ui import CreateTable, CreateSecondaryTableview, CreateCompanyDetails, CreateButtons, ActivateButton
 from AIEditor.logic.CRUD import (build_new_company, get_company_details, write_company_changes, 
                    delete_company_and_reindex, pick_new_selection, prepare_field_value, 
                    apply_generic_ai, get_selected_company, reselect_company)
 from AIEditor.logic.xml_utils import (load_xml_file, save_xml_to_file, build_new_xml_with_company, 
                        build_city_map_from_xml, load_city_xml, ExportExcel, AnalyzeXML, has_xml)
-from AIEditor.logic.ui_utils import refresh_editor_ui
+from AIEditor.logic.ui_utils import refresh_editor_ui, save_tableview_edits, apply_tableview_row_colors
 
 class AIEditor(ttk.Frame):
     # 🏗️ Initialization
@@ -22,7 +22,6 @@ class AIEditor(ttk.Frame):
         self.style = app.style
         self.editor_mode = "table"
         self.table_available = True
-        self.placeholder_label = None
         self.company_map = {}
         self.city_map = {}
         self.preset_vars = {}
@@ -51,6 +50,8 @@ class AIEditor(ttk.Frame):
         self.right_content_frame.rowconfigure(0, weight=1)
 
         CreateTable(self, self.right_content_frame)
+        CreateSecondaryTableview(self, self.right_content_frame)
+        self.tableview_container.grid_remove()
         self.sync_editor_action_buttons()
 
     def has_loaded_xml(self):
@@ -61,27 +62,51 @@ class AIEditor(ttk.Frame):
             return False
         return hasattr(self, "table") and self.table is not None
 
-    def ensure_placeholder_view(self):
-        if self.placeholder_label is None:
-            self.placeholder_label = ttk.Label(
-                self.right_content_frame,
-                text="Mode coming soon",
-                anchor="center"
-            )
+    def set_editor_mode(self, mode):
+        if mode == "table":
+            if hasattr(self, "tableview_container"):
+                self.tableview_container.grid_remove()
+            if hasattr(self, "table_container"):
+                self.table_container.grid()
+            self.editor_mode = "table"
+            self.table_available = True
+            return
+
+        if hasattr(self, "table_container"):
+            self.table_container.grid_remove()
+        if hasattr(self, "tableview_container"):
+            self.tableview_container.grid()
+        self.editor_mode = "tableview"
+        self.table_available = False
+
+    def refresh_ui_after_xml_change(self):
+        refresh_editor_ui(self)
+        ActivateButton(self)
+
+    def save_xml_to_path(self, file_path):
+        try:
+            save_xml_to_file(self.xml_root, file_path)
+            self.last_file = file_path
+            self.show_info(f"XML saved successfully to:\n{file_path}", "Success")
+            return True
+        except Exception as e:
+            self.show_error(f"Failed to save XML:\n{e}", "Error")
+            return False
+
+    def show_info(self, message, title="Info"):
+        Messagebox.show_info(message, title)
+
+    def show_error(self, message, title="Error"):
+        Messagebox.show_error(message, title)
+
+    def show_warning(self, message, title="Warning"):
+        Messagebox.show_warning(message, title)
 
     def show_table_view(self):
-        self.ensure_placeholder_view()
-        self.placeholder_label.grid_remove()
-        self.table_container.grid()
-        self.editor_mode = "table"
-        self.table_available = True
+        self.set_editor_mode("table")
 
-    def show_placeholder_view(self):
-        self.ensure_placeholder_view()
-        self.table_container.grid_remove()
-        self.placeholder_label.grid(row=0, column=0, sticky="nsew", padx=SPACING["md"], pady=SPACING["md"])
-        self.editor_mode = "placeholder"
-        self.table_available = False
+    def show_tableview_mode(self):
+        self.set_editor_mode("tableview")
 
     def sync_editor_action_buttons(self):
         has_xml = self.has_loaded_xml()
@@ -92,15 +117,22 @@ class AIEditor(ttk.Frame):
         else:
             table_state = "disabled"
 
-        self.save_ai_btn.config(state=table_state)
+        self.save_ai_btn.config(state="normal" if has_xml else "disabled")
         self.add_button.config(state=table_state)
         self.delete_ai_btn.config(state=table_state)
         self.generic_ai_btn.config(state=table_state)
         self.switch_mode_btn.config(state="normal" if has_xml else "disabled")
 
+    def refresh_tableview_style(self):
+        if not hasattr(self, "secondary_tableview") or self.secondary_tableview is None:
+            return
+        self.style.configure(TABLEVIEW_STYLE, rowheight=TABLEVIEW_ROW_HEIGHT)
+        self.secondary_tableview.view.configure(style=TABLEVIEW_STYLE)
+        apply_tableview_row_colors(self)
+
     def checkXML(self):
         if not has_xml(getattr(self, "xml_root", None)):
-            Messagebox.show_error("There's no XML yet", "Error")
+            self.show_error("There's no XML yet", "Error")
             return False
         return True
     
@@ -150,10 +182,9 @@ class AIEditor(ttk.Frame):
         self.last_file = None
 
         # Refresh UI
-        refresh_editor_ui(self)
-        ActivateButton(self)
+        self.refresh_ui_after_xml_change()
 
-        Messagebox.show_info("A new AI XML has been created with 1 starter company.", "New XML")
+        self.show_info("A new AI XML has been created with 1 starter company.", "New XML")
 
     # Upload Files
     def upload_xml_file(self):
@@ -173,13 +204,12 @@ class AIEditor(ttk.Frame):
             self.last_file = file_path   # ⭐ remember last file
 
             # 🔄 Update everything
-            refresh_editor_ui(self)
-            ActivateButton(self)
+            self.refresh_ui_after_xml_change()
 
-            Messagebox.show_info(f"XML loaded successfully! 🎉\n{file_path}", "Success")
+            self.show_info(f"XML loaded successfully! 🎉\n{file_path}", "Success")
 
         except Exception as e:
-            Messagebox.show_error(f"Something went wrong 😢\n\n{e}", "Unexpected Error")
+            self.show_error(f"Something went wrong 😢\n\n{e}", "Unexpected Error")
 
     def upload_city_xml(self):
         # Open file dialog to select XML
@@ -192,9 +222,9 @@ class AIEditor(ttk.Frame):
                 self.city_xml_root = load_city_xml(file_path)
                 build_city_map_from_xml(self)
                 refresh_editor_ui(self)
-                Messagebox.show_info(f"City XML uploaded!\n", "Success")
+                self.show_info(f"City XML uploaded!\n", "Success")
             except Exception as e:
-                Messagebox.show_error(f"Failed to load City XML:\n{e}", "Error")
+                self.show_error(f"Failed to load City XML:\n{e}", "Error")
 
     # 📝 Company CRUD
     def add_new_company(self):
@@ -212,6 +242,29 @@ class AIEditor(ttk.Frame):
             return new_company
 
     def save_ai_company(self):
+        if self.editor_mode == "tableview":
+            if not self.checkXML():
+                return
+
+            applied, errors = save_tableview_edits(self)
+
+            if applied > 0:
+                refresh_editor_ui(self)
+
+            if errors:
+                self.show_warning(
+                    "Some edits could not be saved:\n" + "\n".join(errors),
+                    "Partial Save"
+                )
+                return
+
+            if applied == 0:
+                self.show_info("No table edits to save.", "Saved")
+                return
+
+            self.show_info(f"{applied} table edit(s) saved (in memory).", "Saved")
+            return
+
         company, company_id, _ = get_selected_company(self)
         if company is None:
             return
@@ -219,7 +272,7 @@ class AIEditor(ttk.Frame):
 
         refresh_editor_ui(self)
         reselect_company(self, company_id)
-        Messagebox.show_info("AI company changes saved (in memory).", "Saved")
+        self.show_info("AI company changes saved (in memory).", "Saved")
 
     def delete_ai_company(self):
         company, company_id, index = get_selected_company(self)
@@ -241,7 +294,7 @@ class AIEditor(ttk.Frame):
                     var.set("")
                 except Exception:
                     pass
-        Messagebox.show_info(f"Company {company_id} deleted and IDs reindexed.", "Deleted")
+        self.show_info(f"Company {company_id} deleted and IDs reindexed.", "Deleted")
 
     def generic_ai_company(self):
         company, company_id, _ = get_selected_company(self)
@@ -252,7 +305,7 @@ class AIEditor(ttk.Frame):
 
         refresh_editor_ui(self)
         reselect_company(self, company_id)
-        Messagebox.show_info(f"Company {company_id} has it's value set to generic.", "Done")
+        self.show_info(f"Company {company_id} has it's value set to generic.", "Done")
 
     # 📂 File Handling (Load/Save/New)
     def save_to_xml(self):
@@ -271,12 +324,7 @@ class AIEditor(ttk.Frame):
         if not file_path:
             return  # user cancelled
 
-        try:
-            save_xml_to_file(self.xml_root, file_path)   # 👉 hand off logic
-            self.last_file = file_path
-            Messagebox.show_info(f"XML saved successfully to:\n{file_path}", "Success")
-        except Exception as e:
-            Messagebox.show_error(f"Failed to save XML:\n{e}", "Error")
+        self.save_xml_to_path(file_path)
 
     def save_quick(self):
         """Quick-save: overwrite last loaded/saved file directly."""
@@ -287,11 +335,7 @@ class AIEditor(ttk.Frame):
             self.save_to_xml()
             return
 
-        try:
-            save_xml_to_file(self.xml_root, self.last_file)
-            Messagebox.show_info(f"XML saved successfully to:\n{self.last_file}", "Success")
-        except Exception as e:
-            Messagebox.show_error(f"Failed to save XML:\n{e}", "Error")
+        self.save_xml_to_path(self.last_file)
 
     # Export Excel
     def export_excel(self):
@@ -304,11 +348,11 @@ class AIEditor(ttk.Frame):
         if not file_path:
             return
         ExportExcel(self.xml_root, file_path)
-        Messagebox.show_info(f"XML has been exported as {file_path}", "Exported")
+        self.show_info(f"XML has been exported as {file_path}", "Exported")
 
     def switch_mode(self):
         if self.editor_mode == "table":
-            self.show_placeholder_view()
+            self.show_tableview_mode()
         else:
             self.show_table_view()
         self.sync_editor_action_buttons()

@@ -10,6 +10,10 @@ ROW_COLORS = {
     "evenRowLight": "#D6D6D6"
 }
 
+TABLEVIEW_ROW_HEIGHT = 30
+TABLEVIEW_ENTRY_PADDING_Y = 2
+TABLEVIEW_STYLE = "TableviewEditable.Treeview"
+
 TABLE_SELECTION_BG = {
     "Dark": "#51AECA",
     "Light": "#004D79"
@@ -38,6 +42,8 @@ def setup_styles(self):
         self.style.map("Treeview", background=[('selected', TABLE_SELECTION_BG["Light"])])
     if hasattr(self, "table"):   # 🛡️ safety guard
         styleTable(self)
+    if hasattr(self, "editor") and hasattr(self.editor, "refresh_tableview_style"):
+        self.editor.refresh_tableview_style()
     
 def styleTable(self):
     if self.mode.get() == 0:

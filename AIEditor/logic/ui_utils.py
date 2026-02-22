@@ -4,8 +4,21 @@ import ttkbootstrap as ttk
 import tkinter.font as tkFont
 
 # import from different files
-from style import SPACING, InitialWidth, RowWidth
-from AIEditor.settings.config import max_widths, FIELD_TYPES, CREDIT_MAP, GENERIC_MAP
+from style import SPACING, InitialWidth, RowWidth, ROW_COLORS
+from AIEditor.settings.config import (
+    max_widths,
+    FIELD_TYPES,
+    CREDIT_MAP,
+    GENERIC_MAP,
+)
+from AIEditor.logic.company_table_utils import (
+    build_company_rows,
+    build_tableview_column_options,
+    build_tableview_rows,
+    parse_tableview_input,
+    write_company_field,
+    validate_int,
+)
 
 # 🎛️ UI Utilities
 def get_treeview_font(style):
@@ -86,7 +99,7 @@ def load_company_map(self):
         company_map[cid] = cname
     return company_map
 
-def populate_company_table(self):
+def populate_company_table(self, company_rows=None):
     """
     Repopulate the company table with data from the XML file.
     """
@@ -99,48 +112,134 @@ def populate_company_table(self):
     for row in self.table.get_children():
         self.table.delete(row)
 
-    if not self.xml_root:
+    if company_rows is None:
+        company_rows = build_company_rows(self)
+    if not company_rows:
         return  # ⛔ No XML loaded yet → nothing to show
 
     # ➕ Insert updated company rows
-    for idx, company in enumerate(self.xml_root.findall("Company")):
-        cid = company.get("ID")
-        cname = company.get("Name")
-        owner_id = company.get("OwnerID")
-
-        # Convert owner ID → owner name
-        owner_name = self.company_map.get(int(owner_id), owner_id) if owner_id else ""
-
-        # 🏙️ HQ: convert ID → "Name, Country"
-        hq_id = company.get("HQ", "")
-        if hq_id:
-            try:
-                hq_id_int = int(hq_id)
-                hq_name = self.city_map.get(hq_id_int, hq_id)
-            except ValueError:
-                hq_name = self.city_map.get(hq_id, hq_id)
-        else:
-            hq_name = ""
-
-        founded = company.get("Founded", "")
-        death = company.get("Death", "")
-
-        # 💰 Funds
-        funds_elem = company.find("Funds")
-        funds_raw = funds_elem.get("OnHand") if funds_elem is not None else "0"
-        try:
-            funds = f"${int(funds_raw):,}"
-        except ValueError:
-            funds = funds_raw
-
-        # Insert row
-        values = (cid, cname, owner_name, hq_name, founded, death, funds)
+    for idx, row in enumerate(company_rows):
+        values = (
+            row["id"],
+            row["name"],
+            row["owner_name"],
+            row["hq_name"],
+            row["founded"],
+            row["death"],
+            row["funds_display"],
+        )
 
         tag = "evenrow" if idx % 2 == 0 else "oddrow"
         self.table.insert("", tk.END, values=values, tags=(tag,))
 
     # 📏 Adjust column widths automatically
     auto_resize_columns(self.table, self.style)
+
+def populate_company_tableview(self, company_rows=None):
+    """Repopulate secondary Tableview from XML with ID, Name, and selected extra rows."""
+    if not hasattr(self, "secondary_tableview") or self.secondary_tableview is None:
+        return
+
+    if company_rows is None:
+        company_rows = build_company_rows(self)
+
+    options = getattr(self, "tableview_column_options", None) or build_tableview_column_options()
+    selected_key = getattr(self, "tableview_selected_field_key", "Funds_OnHand")
+
+    selected_label = selected_key
+    for display_label, field_key in options.items():
+        if field_key == selected_key:
+            selected_label = display_label
+            break
+
+    coldata = [
+    {"text": "ID", "stretch": False, "anchor": "center"},
+    {"text": "Name", "stretch": True, "anchor": "w"},
+    {"text": selected_label, "stretch": True, "anchor": "w"},
+    ]
+    rowdata = build_tableview_rows(self, company_rows, selected_key)
+
+    self.secondary_tableview.build_table_data(coldata=coldata, rowdata=rowdata)
+    self.secondary_tableview.load_table_data(clear_filters=True)
+    apply_tableview_row_colors(self)
+
+    # Reuse Treeview sorter for numeric ID sorting in secondary Tableview.
+    view = self.secondary_tableview.view
+    columns = view["columns"]
+    if columns:
+        id_col = columns[0]
+        view.heading(
+            id_col,
+            command=lambda _col=id_col: sort_by_column(view, _col, False),
+        )
+
+def apply_tableview_row_colors(self):
+    """Apply odd/even row striping on secondary Tableview using style ROW_COLORS."""
+    if not hasattr(self, "secondary_tableview") or self.secondary_tableview is None:
+        return
+
+    view = self.secondary_tableview.view
+    mode_val = 0
+    try:
+        mode_val = int(self.app.mode.get())
+    except Exception:
+        mode_val = 0
+
+    if mode_val == 0:
+        even_color = ROW_COLORS["evenRowDark"]
+        odd_color = ROW_COLORS["oddRowDark"]
+    else:
+        even_color = ROW_COLORS["evenRowLight"]
+        odd_color = ROW_COLORS["oddRowLight"]
+
+    view.tag_configure("tv_evenrow", background=even_color)
+    view.tag_configure("tv_oddrow", background=odd_color)
+
+    for idx, iid in enumerate(view.get_children()):
+        tag = "tv_evenrow" if idx % 2 == 0 else "tv_oddrow"
+        view.item(iid, tags=(tag,))
+
+def get_company_by_id(self, company_id):
+    """Find a Company node by ID from xml_root."""
+    if not hasattr(self, "xml_root") or self.xml_root is None:
+        return None
+    return self.xml_root.find(f"Company[@ID='{company_id}']")
+
+def save_tableview_edits(self):
+    """
+    Save pending Tableview edits to XML.
+    Returns (applied_count, errors).
+    """
+    pending = getattr(self, "tableview_pending_edits", None)
+    if not pending:
+        return 0, []
+
+    company_map = getattr(self, "company_map", {}) or {}
+    city_map = getattr(self, "city_map", {}) or {}
+
+    applied = 0
+    errors = []
+    applied_keys = []
+
+    for (company_id, field_key), display_value in list(pending.items()):
+        company = get_company_by_id(self, company_id)
+        if company is None:
+            errors.append(f"Company ID {company_id} was not found.")
+            continue
+
+        raw_value = parse_tableview_input(field_key, display_value, company_map, city_map)
+        ok, reason = write_company_field(company, field_key, raw_value)
+        if not ok:
+            errors.append(f"{company_id}/{field_key}: {reason}")
+            continue
+
+        applied += 1
+        applied_keys.append((company_id, field_key))
+
+    for key in applied_keys:
+        pending.pop(key, None)
+
+    return applied, errors
 
 def refresh_editor_ui(self):
     """
@@ -159,9 +258,14 @@ def refresh_editor_ui(self):
     else:
         self.company_map = {}
 
-    # 🖼️ Repopulate the company table (only if company data exists)
-    if hasattr(self, "xml_root") and self.xml_root is not None and getattr(self, "table_available", True):
-        populate_company_table(self)
+    company_rows = build_company_rows(self)
+
+    # 🖼️ Repopulate the company table (editable mode only)
+    if getattr(self, "table_available", True):
+        populate_company_table(self, company_rows)
+
+    # Populate Tableview for mode switching consistency (also clears when xml is missing)
+    populate_company_tableview(self, company_rows)
 
     # ⬇️ Refresh dropdown values dynamically
     for key, widget in self.detail_labels.items():
@@ -264,6 +368,49 @@ def create_spinbox_with_optional_dropdown(editor, subframe, key, var, field_cfg,
 
     return entry, var
 
+def get_dropdown_map(editor, dropdown_source):
+    return getattr(editor, dropdown_source, {}) or {}
+
+def set_spinbox_from_dropdown(var, dropdown_var, map_dict, key):
+    """Dropdown -> Spinbox (name -> ID)."""
+    name = dropdown_var.get()
+    print(f"[DEBUG] on_dropdown_change: key={key} selected_name={name!r} map_size={len(map_dict)}")
+    for cid, cname in map_dict.items():
+        if cname == name:
+            print(f"[DEBUG] on_dropdown_change: match found {cid} -> {cname!r}")
+            var.set(str(cid))
+            return
+    print(f"[DEBUG] on_dropdown_change: no match for {name!r}")
+
+def set_dropdown_from_spinbox(var, dropdown_var, map_dict, key):
+    """Spinbox -> Dropdown (ID -> label)."""
+    raw = var.get()
+    print(f"[DEBUG] on_spinbox_change: key={key} raw_var={raw!r} map_size={len(map_dict)}")
+    try:
+        cid = int(raw)
+        cname = map_dict.get(cid, "")
+        if cname:
+            print(f"[DEBUG] on_spinbox_change: found {cid} -> {cname!r}; setting dropdown_var")
+            dropdown_var.set(cname)
+        else:
+            print(f"[DEBUG] on_spinbox_change: id {cid} not in map -> clearing dropdown_var")
+            dropdown_var.set("")
+    except Exception:
+        print(f"[DEBUG] on_spinbox_change: cannot parse {raw!r} -> clearing dropdown_var")
+        dropdown_var.set("")
+
+def refresh_dropdown_widget_values(dropdown, map_dict, key):
+    vals = list(map_dict.values())
+    dropdown.configure(values=vals)
+    print(f"[DEBUG] refresh_dropdown_values: key={key} refreshed values (count={len(vals)})")
+
+def filter_dropdown_values(dropdown_var, map_dict):
+    value = dropdown_var.get().lower()
+    all_names = list(map_dict.values())
+    if not value:
+        return value, all_names
+    return value, [name for name in all_names if value in name.lower()]
+
 def bind_spinbox_dropdown_sync(editor, var, dropdown_var, dropdown, dropdown_source, key):
     """
     Keep spinbox 'var' and combobox 'dropdown_var' in sync.
@@ -271,58 +418,22 @@ def bind_spinbox_dropdown_sync(editor, var, dropdown_var, dropdown, dropdown_sou
     reacts to maps populated after the widget was created.
     """
 
-    def get_map():
-        # always fetch the current map from editor (company_map or city_map)
-        return getattr(editor, dropdown_source, {}) or {}
-
     def on_dropdown_change(event=None):
-        """Dropdown → Spinbox (name → ID)."""
-        name = dropdown_var.get()
-        map_dict = get_map()
-        print(f"[DEBUG] on_dropdown_change: key={key} selected_name={name!r} map_size={len(map_dict)}")
-        for cid, cname in map_dict.items():
-            if cname == name:
-                print(f"[DEBUG] on_dropdown_change: match found {cid} -> {cname!r}")
-                var.set(str(cid))
-                return
-        print(f"[DEBUG] on_dropdown_change: no match for {name!r}")
+        map_dict = get_dropdown_map(editor, dropdown_source)
+        set_spinbox_from_dropdown(var, dropdown_var, map_dict, key)
 
     def on_spinbox_change(*args):
-        """Spinbox → Dropdown (ID → label)."""
-        raw = var.get()
-        map_dict = get_map()
-        print(f"[DEBUG] on_spinbox_change: key={key} raw_var={raw!r} map_size={len(map_dict)}")
-        try:
-            cid = int(raw)
-            cname = map_dict.get(cid, "")
-            if cname:
-                print(f"[DEBUG] on_spinbox_change: found {cid} -> {cname!r}; setting dropdown_var")
-                dropdown_var.set(cname)
-            else:
-                print(f"[DEBUG] on_spinbox_change: id {cid} not in map -> clearing dropdown_var")
-                dropdown_var.set("")
-        except Exception:
-            print(f"[DEBUG] on_spinbox_change: cannot parse {raw!r} -> clearing dropdown_var")
-            dropdown_var.set("")
+        map_dict = get_dropdown_map(editor, dropdown_source)
+        set_dropdown_from_spinbox(var, dropdown_var, map_dict, key)
 
     def refresh_dropdown_values(event=None):
-        """Refresh combobox values from the live map before user sees it."""
-        map_dict = get_map()
-        vals = list(map_dict.values())
-        dropdown.configure(values=vals)
-        print(f"[DEBUG] refresh_dropdown_values: key={key} refreshed values (count={len(vals)})")
+        map_dict = get_dropdown_map(editor, dropdown_source)
+        refresh_dropdown_widget_values(dropdown, map_dict, key)
 
     def on_dropdown_keyrelease(event):
         """Filter dropdown values dynamically, open list only when pressing Enter."""
-        value = dropdown_var.get().lower()
-        map_dict = get_map()
-        all_names = list(map_dict.values())
-
-        if not value:
-            filtered = all_names
-        else:
-            filtered = [name for name in all_names if value in name.lower()]
-
+        map_dict = get_dropdown_map(editor, dropdown_source)
+        value, filtered = filter_dropdown_values(dropdown_var, map_dict)
         dropdown.configure(values=filtered)
 
         # Only open dropdown when Enter is pressed
@@ -341,10 +452,3 @@ def bind_spinbox_dropdown_sync(editor, var, dropdown_var, dropdown, dropdown_sou
 
     # trace_add expects a callback that accepts (name, index, op) — use *args
     var.trace_add("write", on_spinbox_change)
-
-def validate_int(value):
-    if value == "":
-        return True
-    if value == "-":
-        return True
-    return value.lstrip("-").isdigit()
