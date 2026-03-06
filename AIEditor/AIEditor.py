@@ -1,4 +1,4 @@
-﻿#Import packages
+#Import packages
 import ttkbootstrap as ttk
 from tkinter import filedialog
 from ttkbootstrap.dialogs import Messagebox
